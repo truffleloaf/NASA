@@ -127,12 +127,24 @@ For a site at `(lat₀, lon₀)` and each azimuth bin `a`:
 
    ```
    d      = r / R                      R = 1737 400 m
-   elev(r)= atan2( (R + h_t) − (R + h_s)·cos d , (R + h_s)·sin d )
+   elev(r)= atan2( (R + h_t)·cos d − (R + h_s) , (R + h_t)·sin d )
    ```
 
-   This is the exact spherical form. The small-angle approximation
-   `atan((h_t − h_s − r²/(2R)) / r)` differs from it by well under 0.01° at these ranges,
-   but the exact form costs nothing and avoids the question.
+   This is the exact spherical form: in the great-circle plane through the site and the
+   target, the site sits at `(R + h_s, 0)` and the target at `(R + h_t)·(cos d, sin d)`, so
+   the vertical component of the line of sight is `(R + h_t)·cos d − (R + h_s)` and the
+   horizontal component is `(R + h_t)·sin d`. For equal heights it reduces to **−d/2**, the
+   surface dropping away below the local horizontal. The small-angle approximation
+   `atan((h_t − h_s − r²/(2R)) / r)` agrees to better than 0.01° at these ranges.
+
+   **The sign of the curvature term is a one-character bug with a four-degree consequence.**
+   The first version of this pipeline had `(R + h_t) − (R + h_s)·cos d` over
+   `(R + h_s)·sin d`, which lifts distant terrain instead of dropping it: at 150 km an
+   equal-height point came out at **+2.47°** instead of **−2.47°**, a 4.95° error. Since the
+   Sun stays within ±1.5° of the pole's horizon all year, that inverted the illumination
+   numbers. `horizon.selfcheck()` now pins the analytic cases (equal height → −d/2, monotone
+   fall-off with range, zero-range → +90°) and `run_horizon.py` refuses to continue if any
+   of them fail.
 
 3. Take `horizon(a) = max over r of elev(r)`, then clamp to `≥ 0`.
 
@@ -140,11 +152,17 @@ For a site at `(lat₀, lon₀)` and each azimuth bin `a`:
 at 150 km it falls 6.5 km. Without the correction, distant terrain is grossly over-weighted
 and the horizon is systematically too high.
 
-**Range matters more than expected.** The 50 km range used in the first version of this
-pipeline underestimated the horizon at the pole by a median of 0.74° and up to 1.48°, when
-compared against tracing to the DEM edge. Since the Sun's elevation at the pole stays within
-±1.5°, that error is comparable to the signal. The default is now 150 km, which is the
-usable radius of this DEM.
+**Range truncation is a second-order effect once the curvature sign is right.** At the pole,
+tracing to 50 km, 150 km and 250 km gives identical horizons to the printed precision (0.000°
+median, p95 and max over 180 azimuths). That is expected: curvature puts a target 50 km away
+719 m below the tangent plane, and one 150 km away 6.5 km below, so only terrain far above the
+site can reach over the curve. The 150 km default is kept because it costs nothing and uses
+all the data, not because it moves the numbers.
+
+An earlier revision of this document claimed range mattered a great deal — a 0.74° median
+shift from 50 km to 150 km. That measurement was taken while the curvature term had the wrong
+sign, which amplified distant terrain instead of suppressing it. Both findings trace to the
+same bug; the corrected number is zero.
 
 ### 4.2 Extended bodies
 
@@ -204,24 +222,32 @@ chain on it produces:
 | | |
 | --- | --- |
 | site elevation | −2771 m |
-| terrain horizon | +20.6° … +22.7° (median +21.6°) |
+| terrain horizon | +20.2° … +22.4° (median +21.2°) |
 | sunlit, with terrain | **0.0 %** |
 | Earth visible, with terrain | **0.0 %** |
 
 This is the strongest available end-to-end test. A wrong projection orientation would put
-the site somewhere else on the map and would not produce a 21° bowl. A wrong curvature sign
-would not produce a bowl either. A mis-scaled radius would shift the horizon away from 21°.
-Getting exactly zero requires the projection, the DEM sampling, the curvature term, the
-horizon search, the ephemeris and the masking to be simultaneously correct.
+the site somewhere else on the map and would not produce a 21° bowl. A mis-scaled radius
+would shift the horizon away from 21°. Getting exactly zero requires the projection, the DEM
+sampling, the curvature term, the horizon search, the ephemeris and the masking to be
+simultaneously correct.
+
+It is not, however, sensitive to the *sign* of the curvature term. A 21° bowl is dominated by
+terrain 2–8 km away, where that term contributes 0.05–0.3° whichever way it points. The sign
+error found on 2026-11-11 moved this table by 0.4° and left both zeros intact while the
+lit-site numbers were wrong by a factor of eight. A control site shows that the chain is
+connected; it does not calibrate it. That is why the analytic checks in §5.2 exist beside it.
 
 ### 5.2 Invariants
 
 | Invariant | Result |
 | --- | --- |
 | Terrain-aware visibility ≤ geometric visibility, per site and body | passes for all three sites |
-| Azimuth wrap continuity: horizon(0.5°) ≈ horizon(359.5°) | 0.098° apart |
+| Azimuth wrap continuity: horizon(0.5°) ≈ horizon(359.5°) | 0.036° apart |
 | Image corners map to the latitude predicted from `MAP_SCALE` and image size | −82.936° vs −82.93° predicted |
 | Vectorised sampler ≡ scalar `dem.Projection` | max 1.8 × 10⁻¹² pixel |
+| Equal-height ray elevation = −r/2R (analytic, 1–150 km) | max deviation 3.5 × 10⁻¹²° |
+| Equal-height elevation strictly decreases with range | passes at 1–150 km |
 
 The first invariant found a real bug. With unclamped negative horizon angles, a body below
 the local tangent plane was counted as visible, and terrain-aware Earth visibility exceeded
@@ -234,9 +260,9 @@ Rerunning the horizon search with coarser ray steps, against the 40 m baseline:
 
 | Ray step | Shackleton p95 / max | Malapert p95 / max |
 | --- | --- | --- |
-| 80 m | 0.094° / 0.224° | 0.588° / 0.633° |
-| 160 m | 0.172° / 0.560° | 1.229° / 1.479° |
-| 240 m | 0.236° / 0.402° | 1.477° / 1.699° |
+| 80 m | 0.114° / 0.225° | 0.589° / 0.634° |
+| 160 m | 0.177° / 0.558° | 1.238° / 1.489° |
+| 240 m | 0.256° / 0.432° | 1.483° / 1.705° |
 
 Median differences are 0.000° at 80 m for both sites. The 40 m step is converged; halving it
 would not change results usefully. Malapert is more sensitive because its terrain is steeper
@@ -247,7 +273,7 @@ and it sits near the DEM edge.
 - Sunlit fraction with **no terrain**, at 89.90°S: 52.6 % of the year. At the pole the Sun's
   elevation is set by the subsolar latitude, which swings ±1.54° over a year, so roughly
   half the year should be lit. ✓
-- Earth elevation at the pole swings between about −6.7° and +6.4°, matching the amplitude
+- Earth elevation at the pole swings between about −7.00° and +6.63°, matching the amplitude
   of libration in latitude. Earth visibility is therefore interrupted on a monthly
   timescale even with no terrain at all. ✓
 - The crater floor is dark and the surrounding high ground is not, which is the expected
@@ -264,19 +290,19 @@ Full year 2026, one-hour ephemeris, 150 km rays, 40 m DEM.
 | Ephemeris accuracy | sub-arcsecond (DE441) | negligible |
 | Site position | ±1 pixel, 40 m | sub-arcsecond parallax |
 | DEM vertical accuracy | ~1 m | 0.001/`d` rad → < 0.02° beyond 3 km |
-| DEM horizontal sampling | 40 m | p95 ≤ 0.1° (Shackleton), ≤ 0.6° (Malapert) |
-| Ray range truncation | 150 km, DEM-limited | up to 1.5° in the worst azimuth; see below |
-| Disc vs point treatment | Sun 0.266°, Earth 0.951° | +1.9 to +2.5 percentage points (limb vs centre) |
+| DEM horizontal sampling | 40 m | p95 ≤ 0.12° (Shackleton), ≤ 0.59° (Malapert) |
+| Ray range truncation | 150 km, DEM-limited | negligible: 50/150/250 km differ by 0.000° at the pole |
+| Disc vs point treatment | Sun 0.266°, Earth 0.951° | +2.3 to +3.6 pt (sun), +4.6 to +5.0 pt (Earth) |
 | Time quantisation | 10 min masks, 1 h ephemeris | ±10 min on interval boundaries |
 | Sphere vs ellipsoid | Moon flattening ≈ 1/581 | < 0.01° |
 
-**Range truncation in detail.** Shackleton reaches 148.5–150 km in every azimuth (10 of 360
-stop marginally short). Malapert sits 121.7 km from the pole inside a DEM whose usable
-radius is about 151.7 km, so rays heading away from the pole leave the data after about
-30 km: 178 of 360 azimuths stop before 149 km, the shortest at 30.0 km. Malapert's horizon
-is therefore a lower bound in roughly half the sky, and its true illumination is lower than
-reported. Re-running it against the 80°S–90°S product (`ldem_80s_40m`, 462 MB) would remove
-this limitation.
+**The DEM edge, in detail.** Shackleton never stops short of 148.5 km in any azimuth, so it is
+unaffected. Malapert sits 121.7 km from the pole inside a DEM whose usable radius is about
+151.7 km, so rays heading away from the pole leave the data after about 30 km: 155 of 360
+azimuths stop before 142.5 km, the shortest at 30.0 km. Malapert's horizon is therefore a
+lower bound in roughly that half of the sky, and its true illumination is lower than reported
+— the one number here limited by data extent rather than by method. Re-running it against the
+80°S–90°S product (`ldem_80s_40m`, 462 MB) would remove this limitation.
 
 **What is not in the budget.** DEM errors are correlated at the scale of the interpolation,
 so the quoted per-azimuth errors understate the uncertainty of a *time series*; a

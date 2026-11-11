@@ -229,9 +229,11 @@ def main() -> None:
             },
             "limits": [
                 "DEM is 40 m/pixel; terrain detail below that is not represented",
-                "rays are traced to 50 km; Malapert loses ~1/3 of azimuths earlier at the DEM edge",
+                f"rays are traced to {MAX_RANGE_KM:.0f} km, the usable radius of this 85S-90S DEM; "
+                "azimuths that leave the DEM earlier stop at the edge",
                 "1-hour ephemeris, interpolated to 10 minutes for visibility masks",
                 "geometric line of sight only; no radio-link budget",
+                "site positions are the product's fixed points, not re-optimised for illumination",
             ],
         },
         "sites": index_sites,

@@ -42,6 +42,15 @@ def main() -> None:
     print(f"=== 向量化自检：与 dem.Projection 最大偏差 {dev:.3e} 像素 ===")
     print()
 
+    print("=== 曲率项自检（解析解，不依赖 DEM）===")
+    curv = horizon.selfcheck()
+    for ok, msg in curv:
+        print("  " + msg)
+    if not all(ok for ok, _ in curv):
+        print("\n曲率自检失败：此时算出的地平线不可信，停止。")
+        sys.exit(1)
+    print()
+
     corners = []
     for line, sample in ((0, 0), (0, proj.samples - 1),
                          (proj.lines - 1, 0), (proj.lines - 1, proj.samples - 1)):

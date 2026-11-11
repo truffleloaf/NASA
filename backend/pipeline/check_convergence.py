@@ -25,7 +25,7 @@ SITES = {
     "malapert":   dict(lat=-85.99, lon=2.30),
 }
 STEPS_M = [40.0, 80.0, 160.0, 240.0]
-MAX_RANGE_KM = 50.0
+MAX_RANGE_KM = horizon.DEFAULT_MAX_RANGE_M / 1000.0
 
 
 def main() -> None:
@@ -55,17 +55,20 @@ def main() -> None:
     print("解读：若 80/160/240 m 的偏差都很小，说明 40 m 采样已收敛；")
     print("      若有系统性负偏差，说明粗采样漏掉了细窄的山脊。")
 
-    # 50 km 之外还有多少地形贡献？用极点做一次 200 km 的对照
+    # 射线距离截断：50 / 150（默认）/ 250 km 三档，看多远之后不再有贡献
     print()
-    print("== 50 km 截断误差（极点，扫到 200 km 对照）")
-    near = horizon.horizon_profile(grid, -90.0, 0.0, az_step_deg=2.0,
-                                   max_range_m=50_000.0)
-    far = horizon.horizon_profile(grid, -90.0, 0.0, az_step_deg=2.0,
-                                  max_range_m=200_000.0)
-    diff = far["horizon_deg"] - near["horizon_deg"]
-    print(f"   50 km  vs 200 km：中位差 {np.nanmedian(diff):+.3f}°  "
-          f"p95 {np.nanpercentile(diff, 95):+.3f}°  最大 {np.nanmax(diff):+.3f}°")
-    print(f"   （200 km 时有效方位数 {int(np.isfinite(far['horizon_deg']).sum())}/180）")
+    print("== 射线距离截断（极点，2° 方位格）")
+    ranges = [("50 km", 50_000.0),
+              (f"{MAX_RANGE_KM:.0f} km（默认）", MAX_RANGE_KM * 1000.0),
+              ("250 km", 250_000.0)]
+    profs = [horizon.horizon_profile(grid, -90.0, 0.0, az_step_deg=2.0, max_range_m=r)
+             for _, r in ranges]
+    for i in range(1, len(profs)):
+        diff = profs[i]["horizon_deg"] - profs[i - 1]["horizon_deg"]
+        print(f"   {ranges[i-1][0]} → {ranges[i][0]}：中位差 {np.nanmedian(diff):+.3f}°  "
+              f"p95 {np.nanpercentile(diff, 95):+.3f}°  最大 {np.nanmax(diff):+.3f}°")
+    print(f"   （DEM 可用半径约 151.7 km，250 km 时有效方位数 "
+          f"{int(np.isfinite(profs[-1]['horizon_deg']).sum())}/180）")
 
 
 if __name__ == "__main__":

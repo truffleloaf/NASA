@@ -8,9 +8,15 @@
 --------
 1. **月球曲率必须算进去。** 距离 r 处的点因为球面弯曲，比平面模型低约
    r²/(2R)：r = 20 km 时约 115 m。极区太阳仰角只有 0–2°，这点差别足以
-   改变可见性判断。这里用精确球面公式，不用小角近似：
+   改变可见性判断。这里用精确球面公式，不用小角近似。在过站点与目标的
+   大圆平面里，以站点半径方向为「上」：
 
-       elev = atan2( (R+h_t) - (R+h_s)·cos(d) , (R+h_s)·sin(d) ),  d = r/R
+       elev = atan2( (R+h_t)·cos(d) − (R+h_s) , (R+h_t)·sin(d) ),  d = r/R
+
+   等高点（h_t = h_s）必须给出 **−d/2**，即远端低于当地地平线。这一项符号
+   写反的话，远处地形会被抬高而不是压下去：150 km 处误差 4.95°，而极区
+   太阳仰角全年只在 ±1.54° 之间，足以把结论整个翻过来。`selfcheck()` 专门
+   守这一条。
 
 2. **太阳和地球都是圆面，不是点。** 太阳视半径 0.266°，地球从月球看约
    0.951°。极区两者都贴着地平线，用中心还是用边缘会明显改变结果，所以
@@ -125,12 +131,58 @@ def destination(lat0: float, lon0: float, az_deg, dist_m):
 
 
 def elevation_angle(h_site: float, h_target, dist_m) -> np.ndarray:
-    """目标点相对站点当地地平线的仰角（度），含月球曲率。"""
+    """目标点相对站点当地地平线的仰角（度），含月球曲率。
+
+    推导：在过站点、目标与球心的大圆平面里，站点在 (R+h_s, 0)，目标在
+    (R+h_t)·(cos d, sin d)。以站点半径方向为「上」，则
+
+        上分量   = (R+h_t)·cos d − (R+h_s)
+        水平分量 = (R+h_t)·sin d
+
+    等高点时上分量 = (R+h)(cos d − 1) < 0，仰角 = −d/2，符合球面下沉。
+    """
     r = np.asarray(dist_m, dtype=np.float64)
+    ht = np.asarray(h_target, dtype=np.float64)
     d = r / R_MOON_M
-    num = (R_MOON_M + h_target) - (R_MOON_M + h_site) * np.cos(d)
-    den = (R_MOON_M + h_site) * np.sin(d)
+    num = (R_MOON_M + ht) * np.cos(d) - (R_MOON_M + h_site)
+    den = (R_MOON_M + ht) * np.sin(d)
     return np.degrees(np.arctan2(num, den))
+
+
+def selfcheck() -> list[tuple[bool, str]]:
+    """曲率项的符号与量级自检。这几条解析解不依赖 DEM，能在秒级跑完。
+
+    存在的理由：控制站点（坑底）能验证整条链路通不通，但坑底由近处坑壁
+    主导（21°），曲率项写反只差 0.1°；极区真正的信号在 1–2°，只有解析
+    自检才抓得住。2026-11-11 修的就是这个符号。
+    """
+    out: list[tuple[bool, str]] = []
+
+    def item(ok: bool, msg: str) -> None:
+        out.append((bool(ok), f"{'PASS' if ok else 'FAIL'}  {msg}"))
+
+    dists = np.array([1e3, 5e3, 20e3, 50e3, 150e3])
+    equal = elevation_angle(0.0, np.zeros_like(dists), dists)
+    expect = -np.degrees(dists / R_MOON_M / 2.0)
+    worst = float(np.max(np.abs(equal - expect)))
+    item(worst < 1e-9, f"等高点仰角 = −d/2（最大偏差 {worst:.2e}°，5 个距离）")
+    item(bool(np.all(equal < 0.0)), "等高点全部低于当地地平线（曲率压下去，不是抬起来）")
+
+    # 单调性：等高面随距离单调下沉
+    far = np.array([1e3, 2e3, 5e3, 10e3, 20e3, 50e3, 100e3, 150e3])
+    e = elevation_angle(0.0, np.zeros_like(far), far)
+    item(bool(np.all(np.diff(e) < 0.0)), "等高面仰角随距离单调下降")
+
+    # 与「平面 + 曲率下沉」近似式交叉核对（20 km，目标高 1 km）
+    r = 20_000.0
+    got = float(elevation_angle(0.0, np.array([1000.0]), np.array([r]))[0])
+    approx = np.degrees(np.arctan((1000.0 - r * r / (2 * R_MOON_M)) / r))
+    item(abs(got - approx) < 0.01, f"20 km/1 km 高地仰角 {got:+.3f}° 与近似式 {approx:+.3f}° 一致")
+
+    # 目标在站点正上方（d→0）时仰角应为 +90°
+    item(float(elevation_angle(0.0, np.array([1000.0]), np.array([1e-6]))[0]) > 89.9,
+         "零距离高差 → 仰角接近 +90°")
+    return out
 
 
 # --------------------------------------------------------------------------- #
