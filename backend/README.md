@@ -158,8 +158,11 @@ Additional numerical checks: the vectorised sampler agrees with `dem.Projection`
 
 ## Data product
 
-`export_data.py` writes three files into `backend/out/data/`. Copy that directory to the
+`export_data.py` writes three files into `backend/export/data/`. Copy that directory to the
 frontend's `public/data/`.
+
+> The directory is named `export/` rather than `out/` because the repository root
+> `.gitignore` ignores `out/` for the Next.js static export.
 
 ```
 data/index.json           manifest + per-site metadata + horizon summary   ~3 kB

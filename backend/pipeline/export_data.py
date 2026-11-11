@@ -50,7 +50,7 @@ MASK_STEP_MIN = 10          # 遮罩用更细的步长（由 1 小时序列线�
 AZ_STEP_DEG = 1.0
 MAX_RANGE_KM = 50.0
 
-OUT = Path(__file__).resolve().parents[1] / "out" / "data"
+OUT = Path(__file__).resolve().parents[1] / "export" / "data"
 
 
 def iso(dt: datetime) -> str:

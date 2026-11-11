@@ -7,5 +7,5 @@ data/dem/
 # Cached raw JPL Horizons responses — reproducible with one command, do not commit.
 data/horizons/
 
-# Note: out/ is committed on purpose. It is the data product handed to the
+# Note: export/ is committed on purpose. It is the data product handed to the
 # frontend, small enough to review in a diff (338 kB raw, 98 kB gzipped).

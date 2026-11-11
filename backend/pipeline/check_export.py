@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-DATA = Path(__file__).resolve().parents[1] / "out" / "data"
+DATA = Path(__file__).resolve().parents[1] / "export" / "data"
 
 DEFAULTS = dict(sunlight=12.0, blackout=4.0, duration=18.0)
 
