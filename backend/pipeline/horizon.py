@@ -31,6 +31,11 @@ SUN_ANGULAR_RADIUS_DEG = 0.266
 # 地球视半径 = atan(6378.137 km / 384400 km) ≈ 0.951°
 EARTH_ANGULAR_RADIUS_DEG = float(np.degrees(np.arctan(6378.137 / 384400.0)))
 
+# 射线追踪距离。取 150 km 而不是 50 km：实测（check_convergence.py）把范围从
+# 50 km 放到 DEM 边界，极点的地平线会系统性抬高约 0.74°（最大 1.48°）。
+# 极区太阳仰角只有 1–2°，这个偏差和信号本身同量级，不能忽略。
+DEFAULT_MAX_RANGE_M = 150_000.0
+
 
 # --------------------------------------------------------------------------- #
 # 向量化的 DEM 读取
@@ -134,7 +139,7 @@ def elevation_angle(h_site: float, h_target, dist_m) -> np.ndarray:
 
 def horizon_profile(grid: HeightGrid, lat: float, lon: float, *,
                     az_step_deg: float = 1.0,
-                    max_range_m: float = 50_000.0,
+                    max_range_m: float = DEFAULT_MAX_RANGE_M,
                     step_m: float | None = None,
                     observer_height_m: float = 0.0) -> dict:
     """算出每个方位角的遮挡仰角。

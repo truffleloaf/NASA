@@ -48,7 +48,7 @@ SERIES_STEP = "1 h"
 SERIES_STEP_MIN = 60
 MASK_STEP_MIN = 10          # 遮罩用更细的步长（由 1 小时序列线性插值）
 AZ_STEP_DEG = 1.0
-MAX_RANGE_KM = 50.0
+MAX_RANGE_KM = horizon.DEFAULT_MAX_RANGE_M / 1000.0
 
 OUT = Path(__file__).resolve().parents[1] / "export" / "data"
 

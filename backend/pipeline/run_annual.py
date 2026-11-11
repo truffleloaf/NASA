@@ -34,7 +34,7 @@ START = "2026-01-01 00:00"
 STOP = "2027-01-01 00:00"
 STEP = "1 h"
 STEP_H = 1.0
-MAX_RANGE_KM = 50.0
+MAX_RANGE_KM = horizon.DEFAULT_MAX_RANGE_M / 1000.0
 
 
 def fmt(h: float) -> str:

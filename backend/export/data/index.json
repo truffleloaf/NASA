@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_utc": "2026-11-11T14:13:49Z",
+  "generated_utc": "2026-11-11T14:22:51Z",
   "manifest": {
     "ephemeris": {
       "source": "JPL Horizons, DE441",
@@ -18,7 +18,7 @@
       "source": "LRO LOLA LDEM_85S_40M (PDS Geosciences)",
       "map_scale_m": 40,
       "azimuth_bins": 360,
-      "max_range_km": 50.0,
+      "max_range_km": 150.0,
       "curvature": "exact spherical, R = 1737.4 km",
       "projection": "polar stereographic, lon 0 up, +90E right"
     },
@@ -56,20 +56,20 @@
       "lon_deg": 0.0,
       "elevation_m": 629.4,
       "horizon_summary": {
-        "min_deg": 0.0,
-        "median_deg": 2.56,
+        "min_deg": 0.76,
+        "median_deg": 4.09,
         "max_deg": 22.4,
         "max_at_azimuth_deg": 140.5
       },
       "annual": {
-        "solar_fraction": 0.1954,
-        "solar_limb_fraction": 0.2234,
-        "earth_fraction": 0.4632,
-        "earth_limb_fraction": 0.509,
-        "both_fraction": 0.1495,
-        "longest_solar_h": 234.17,
-        "longest_both_h": 234.17,
-        "longest_earth_gap_h": 148.0
+        "solar_fraction": 0.0275,
+        "solar_limb_fraction": 0.0474,
+        "earth_fraction": 0.2708,
+        "earth_limb_fraction": 0.3249,
+        "both_fraction": 0.0095,
+        "longest_solar_h": 53.33,
+        "longest_both_h": 52.0,
+        "longest_earth_gap_h": 80.67
       },
       "file": "sites/shackleton.json"
     },
@@ -81,18 +81,18 @@
       "elevation_m": 5148.3,
       "horizon_summary": {
         "min_deg": 0.0,
-        "median_deg": 0.73,
+        "median_deg": 1.56,
         "max_deg": 3.82,
         "max_at_azimuth_deg": 282.5
       },
       "annual": {
-        "solar_fraction": 0.3655,
-        "solar_limb_fraction": 0.3881,
+        "solar_fraction": 0.3083,
+        "solar_limb_fraction": 0.3261,
         "earth_fraction": 0.5467,
         "earth_limb_fraction": 0.5966,
-        "both_fraction": 0.2284,
-        "longest_solar_h": 346.83,
-        "longest_both_h": 327.83,
+        "both_fraction": 0.2008,
+        "longest_solar_h": 283.33,
+        "longest_both_h": 283.33,
         "longest_earth_gap_h": 169.5
       },
       "file": "sites/malapert.json"

@@ -28,9 +28,10 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | Terrain horizon profile | **done** | 1° azimuth bins, 50 km range, lunar curvature included |
 | Terrain-aware occlusion | **done** | `elevation > max(terrain_horizon, 0)` |
 | Validation suite | **done** | three invariants plus a control site, see below |
+| Numerical convergence | **done** | ray step and ray range sensitivity measured |
 | Export to `public/data/` | **done** | `export_data.py`; 338 kB raw, 98 kB gzipped for two sites |
 | Contract check | **done** | `check_export.py` rebuilds `analyze()` output from JSON alone |
-| `METHOD.md` | **not started** | required by the proposal |
+| `METHOD.md` | **done** | sources, method, validation, uncertainty budget, limitations |
 
 ## Layout
 
@@ -47,6 +48,7 @@ backend/
 │  ├─ run_annual.py           full-year visibility, with terrain (Phase 2)
 │  ├─ export_data.py          write the JSON data product (Phase 3)
 │  ├─ check_export.py         rebuild analyze() output from the JSON alone
+│  ├─ check_convergence.py    ray step and ray range sensitivity
 │  ├─ demo_geometric.py       two-site comparison, no terrain
 │  ├─ scan_windows.py         which 7-day periods actually contain windows
 │  └─ check_frontend_tests.py replay the frontend's assertions on real data
@@ -66,6 +68,7 @@ python backend/pipeline/run_horizon.py           # horizon profiles + projection
 python backend/pipeline/run_annual.py            # full-year visibility with terrain
 python backend/pipeline/export_data.py           # write out/data/*.json
 python backend/pipeline/check_export.py          # verify the JSON rebuilds analyze()
+python backend/pipeline/check_convergence.py     # ray step and ray range sensitivity
 python backend/pipeline/demo_geometric.py        # two-site Sun/Earth comparison, no terrain
 python backend/pipeline/scan_windows.py          # which weeks contain windows
 python backend/pipeline/check_frontend_tests.py  # frontend assertions on real data
@@ -132,18 +135,24 @@ permanently shadowed. It is the end-to-end test of the whole chain.
 Getting exactly zero here requires the projection, the DEM sampling, the curvature term,
 the horizon search, the ephemeris and the masking to all be correct at once.
 
-**Candidate sites.**
+**Candidate sites.** Rays traced to 150 km.
 
 | | Shackleton 89.90°S 0.00°E | Malapert 85.99°S 2.30°E |
 | --- | --- | --- |
 | site elevation | +629 m | +5148 m |
-| terrain horizon | 0° … +22.4° (median +2.6°) | 0° … +3.8° (median +0.7°) |
+| terrain horizon | +0.8° … +22.4° (median +4.1°) | 0° … +3.8° (median +1.6°) |
 | sunlit, geometry only | 52.6 % | 51.6 % |
-| sunlit, with terrain | **19.6 %** | **36.5 %** |
-| longest continuous sunlit | 234 h (9.8 d) | 347 h (14.5 d) |
+| sunlit, with terrain | **2.8 %** | **30.8 %** |
+| longest continuous sunlit | 53 h (2.2 d) | 283 h (11.8 d) |
 | Earth visible, geometry only | 46.3 % | 66.6 % |
-| Earth visible, with terrain | 46.3 % | **54.7 %** |
-| sunlit **and** Earth visible | 15.0 % | **22.8 %** |
+| Earth visible, with terrain | 27.1 % | **54.7 %** |
+| sunlit **and** Earth visible | 0.9 % | **20.1 %** |
+
+**Ray range mattered.** An earlier version traced only 50 km and reported 19.6 % / 36.5 %.
+Comparing a 50 km trace against one reaching the DEM edge showed the horizon was
+underestimated by a median 0.74° and up to 1.48°. With the Sun only 1.5° above the horizon
+at the pole, that is the same order as the signal, so the default range is now 150 km. The
+control site stayed at 0.0 % across the change, which is why the change is trusted.
 
 **Invariants.**
 
@@ -193,18 +202,22 @@ Two deliberate decisions:
    range, so the frontend slices and then re-bases: `hours = (t - start) / 3600`.
 
 **Truncation caveat.** A window that runs to the edge of the requested period is clipped by
-that period and must be displayed as `≥ N h`. In the 2026-11-14 → 11-20 test the Shackleton
+that period and must be displayed as `≥ N h`. In the 2026-11-14 → 11-20 test the Malapert
 window ends exactly at hour 168, i.e. at the period boundary, so its true duration is longer
-than the 18.7 h reported inside the window.
+than the 81.7 h reported inside the window. Over the same week Shackleton yields no window
+at all: 0 % sunlit, 12 % Earth visibility.
 
 ## Findings that affect the frontend
 
-- At 89.90°S 0.00°E the site is **19.6 % sunlit over a year**, and the terrain horizon
-  reaches +22.4°. The point is about 12.6 km from the Shackleton centre (crater radius is
-  about 10.5 km), i.e. on the outer flank rather than on the rim crest. If the product is
-  meant to demonstrate a favourable site, this coordinate should be reconsidered.
-- With terrain included, **Malapert outperforms Shackleton on every metric**, which
-  reverses the picture suggested by geometry alone.
+- At 89.90°S 0.00°E the site is **2.8 % sunlit over a year** — about ten days of light. The
+  terrain horizon never drops below +0.8° and reaches +22.4°, while the Sun's elevation at
+  the pole never exceeds +1.54°. The point is about 12.6 km from the Shackleton centre
+  (crater radius about 10.5 km), i.e. on the outer flank rather than on the rim crest. If
+  the product is meant to demonstrate a favourable site, this coordinate should be
+  reconsidered — the published high-illumination points are on the rim crest, not here.
+- With terrain included, **Malapert outperforms Shackleton by an order of magnitude** on
+  combined sunlight and Earth visibility (20.1 % vs 0.9 %), which reverses the picture
+  suggested by geometry alone.
 - Earth visibility from the pole is dominated by libration in latitude (±6.7° swing), not
   by terrain. A week with no Earth visibility is expected and is not a bug.
 
@@ -218,6 +231,7 @@ than the 18.7 h reported inside the window.
 - Lunar curvature must be removed when testing terrain obstruction:
   `drop(r) = r^2 / (2 * 1737.4 km)`, which is about 115 m at 20 km. Omitting it
   systematically overestimates obstruction. `horizon.py` uses the exact spherical form.
-- For Malapert, 101 of 360 azimuths cannot be traced to 50 km because the ray leaves the
-  85°S–90°S DEM. The affected directions have short effective range and are reported by
-  `run_horizon.py`.
+- For Malapert, 178 of 360 azimuths cannot be traced to 150 km because the ray leaves the
+  85°S–90°S DEM; the shortest stops at 30 km. Its horizon is therefore a lower bound in
+  roughly half the sky, so its true illumination is somewhat lower than reported.
+  Re-running against `ldem_80s_40m` (462 MB) would remove this.

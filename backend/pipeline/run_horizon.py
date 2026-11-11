@@ -22,7 +22,7 @@ SITES = {
 }
 
 AZ_STEP = 1.0
-MAX_RANGE_KM = 50.0
+MAX_RANGE_KM = horizon.DEFAULT_MAX_RANGE_M / 1000.0
 
 COMPASS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
            "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
