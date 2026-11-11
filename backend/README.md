@@ -28,7 +28,8 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | Terrain horizon profile | **done** | 1° azimuth bins, 50 km range, lunar curvature included |
 | Terrain-aware occlusion | **done** | `elevation > max(terrain_horizon, 0)` |
 | Validation suite | **done** | three invariants plus a control site, see below |
-| Export to `public/data/` | **not started** | schema intentionally not frozen yet |
+| Export to `public/data/` | **done** | `export_data.py`; 338 kB raw, 98 kB gzipped for two sites |
+| Contract check | **done** | `check_export.py` rebuilds `analyze()` output from JSON alone |
 | `METHOD.md` | **not started** | required by the proposal |
 
 ## Layout
@@ -44,6 +45,8 @@ backend/
 │  ├─ fetch_dem.py            download LOLA polar DEM (resumable)
 │  ├─ run_horizon.py          horizon profile for the candidate sites + self-checks
 │  ├─ run_annual.py           full-year visibility, with terrain (Phase 2)
+│  ├─ export_data.py          write the JSON data product (Phase 3)
+│  ├─ check_export.py         rebuild analyze() output from the JSON alone
 │  ├─ demo_geometric.py       two-site comparison, no terrain
 │  ├─ scan_windows.py         which 7-day periods actually contain windows
 │  └─ check_frontend_tests.py replay the frontend's assertions on real data
@@ -61,6 +64,8 @@ pip install -r backend/requirements.txt
 python backend/pipeline/fetch_dem.py             # download the 115 MB DEM (resumable)
 python backend/pipeline/run_horizon.py           # horizon profiles + projection self-checks
 python backend/pipeline/run_annual.py            # full-year visibility with terrain
+python backend/pipeline/export_data.py           # write out/data/*.json
+python backend/pipeline/check_export.py          # verify the JSON rebuilds analyze()
 python backend/pipeline/demo_geometric.py        # two-site Sun/Earth comparison, no terrain
 python backend/pipeline/scan_windows.py          # which weeks contain windows
 python backend/pipeline/check_frontend_tests.py  # frontend assertions on real data
@@ -150,6 +155,44 @@ the horizon search, the ephemeris and the masking to all be correct at once.
 
 Additional numerical checks: the vectorised sampler agrees with `dem.Projection` to
 1.8 × 10⁻¹² pixel; all four image corners map to −82.936°.
+
+## Data product
+
+`export_data.py` writes three files into `backend/out/data/`. Copy that directory to the
+frontend's `public/data/`.
+
+```
+data/index.json           manifest + per-site metadata + horizon summary   ~3 kB
+data/sites/shackleton.json                                             ~168 kB (45 kB gzip)
+data/sites/malapert.json                                               ~171 kB (53 kB gzip)
+```
+
+**`index.json`** carries `manifest` (sources, coverage, conventions, limits) and a `sites`
+array with `id`, `lat_deg`, `lon_deg`, `elevation_m`, `horizon_summary`, `annual` and the
+path to the per-site file.
+
+**`sites/<id>.json`** carries four blocks:
+
+| Block | Contents |
+| --- | --- |
+| `site` | id, name, coordinates, elevation |
+| `series` | `sun_azimuth`, `sun_elevation`, `earth_azimuth`, `earth_elevation`; 8761 samples at 60 min from 2026-01-01T00:00Z, integers in units of 0.01° |
+| `visibility` | `solar_center`, `solar_limb`, `earth_center`, `earth_limb` — arrays of `[start, end]` absolute UTC ISO-8601 pairs, half-open, computed at 10 min |
+| `annual` | coverage fractions and longest runs, for display and sanity checks |
+
+Two deliberate decisions:
+
+1. **Operating windows are not exported.** The frontend already has the window-matching
+   logic and needs to re-run it whenever the user moves a requirement slider. The backend
+   ships *when there is sunlight* and *when Earth is visible*; the frontend derives windows.
+   `check_export.py` proves this works by rebuilding `analyze()` output from the JSON alone.
+2. **Intervals are absolute UTC, not hours since a start date.** The user can pick any date
+   range, so the frontend slices and then re-bases: `hours = (t - start) / 3600`.
+
+**Truncation caveat.** A window that runs to the edge of the requested period is clipped by
+that period and must be displayed as `≥ N h`. In the 2026-11-14 → 11-20 test the Shackleton
+window ends exactly at hour 168, i.e. at the period boundary, so its true duration is longer
+than the 18.7 h reported inside the window.
 
 ## Findings that affect the frontend
 
