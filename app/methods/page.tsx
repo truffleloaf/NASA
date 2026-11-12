@@ -39,12 +39,13 @@ export default function MethodsPage() {
         <Card>
           <h2>How to read the badges</h2>
           <p>
-            <ProvenanceBadge kind="Computed" /> A number derived from the bundled NASA/JPL ephemeris or processed LOLA
-            elevation data. This includes source coordinates, body directions, angular diameters and dataset dimensions.
+            <ProvenanceBadge kind="Computed" /> A value read straight from the bundled datasets: site coordinates, Sun
+            and Earth directions and angular diameters from the JPL ephemeris, elevation samples from the LOLA DEM, and
+            dataset dimensions. No modelling step sits between the file and the number.
           </p>
           <p>
-            <ProvenanceBadge /> A result that depends on sampled terrain, interpolation or planning assumptions. All
-            visibility percentages, window times, mast deltas, fit ranks and heatmap hours are estimates.
+            <ProvenanceBadge /> A value that needs a model between the data and the number: terrain horizons,
+            interpolated samples, visibility percentages, window times, mast deltas, fit ranks and heatmap hours.
           </p>
           <p>
             <ProvenanceBadge kind="Illustrative" /> A visual aid, such as the landing Moon, exaggerated relief or

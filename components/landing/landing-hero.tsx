@@ -69,8 +69,8 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
         </div>
         <div className="hero-foot">
           <ProvenanceBadge
-            kind="Computed"
-            detail="Bundled NASA/JPL ephemerides and LOLA terrain. Visibility and operating windows are Estimated."
+            kind="Estimated"
+            detail="JPL DE441 directions and LRO LOLA elevations are Computed; terrain horizons, visibility and windows are Estimated."
           />
           <span>Real source data. Explicit uncertainty.</span>
         </div>
