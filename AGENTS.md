@@ -66,3 +66,25 @@ and tracks below; bottom bar with "Limits" (opens a sheet) and "Find windows".
 Components to build once and reuse (components/ui/): Card, SectionLabel (mono caps),
 Segmented, Chip, Slider (label, value, accent), StatTile, ScoreRing, ProvenanceBadge, Track
 (horizontal timeline row with bars and playhead), Sheet (mobile drawer), Toast, Skeleton.
+
+## Atmosphere exception
+
+A decorative space background is allowed on the landing hero and as a faint star backdrop
+in the 3D scene. Never place it behind cards, tables, forms, or Windows, Compare, Brief,
+or Methods pages. Decorative tokens are --galaxy-core #2A3850, --galaxy-arm #1B2433,
+and --starlight #DDE3EE; never use them for UI chrome or data meaning.
+Decorative layers are aria-hidden and pointer-events none. Sun remains amber, Earth blue,
+and windows green. No glassmorphism or emoji. DOM/CSS animation changes only transform
+and opacity; only the star canvas and Three.js scenes use per-frame JavaScript animation.
+Use cubic-bezier(0.2, 0, 0, 1) and 150 / 240 / 600 ms for UI transitions. The specified
+slow galaxy rotation is linear. Reduced motion makes the atmosphere and entrances static.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowRight, ArrowUpRight, Orbit, Sun, Earth, Clock3 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Orbit, Sun, Clock3 } from "lucide-react";
 import { StatTile } from "./ui/stat-tile";
-import { ProvenanceBadge } from "./ui/provenance-badge";
 import { Skeleton } from "./ui/skeleton";
+import { LandingHero } from "./landing/landing-hero";
 const AppShell = dynamic(() => import("./mission/app-shell"), {
   loading: () => <Skeleton label="Opening mission control" />,
 });
@@ -48,69 +48,7 @@ export default function MissionApp() {
         </nav>
       </header>
       <main id="main">
-        <section className="landing-hero">
-          <div className="hero-copy">
-            <span className="mono-caps">
-              <i className="status-dot" /> A clearer view of the lunar south pole
-            </span>
-            <h1>
-              Find the hours
-              <br />
-              when the Moon
-              <br />
-              lets you work.
-            </h1>
-            <p>
-              Sunlight for power. Earth in sight for connection.
-              <br className="desktop-only" /> Discover where both align, and plan around the terrain.
-            </p>
-            <div className="button-row">
-              <button className="action-primary" onClick={() => setView("explorer")}>
-                Open the explorer
-                <ArrowRight />
-              </button>
-              <button className="action-outline" onClick={() => setView("compare")}>
-                Compare sites
-              </button>
-            </div>
-            <div className="hero-foot">
-              <ProvenanceBadge
-                kind="Computed"
-                detail="Bundled NASA/JPL ephemerides and LOLA terrain. Visibility and operating windows are Estimated."
-              />
-              <span>Real source data. Explicit uncertainty.</span>
-            </div>
-          </div>
-          <div
-            className="moon-composition"
-            role="img"
-            aria-label="Illustrative Moon with a callout for the Shackleton region at the south pole"
-          >
-            <div className="landing-moon" />
-            <div className="moon-site">
-              <span className="site-dot" />
-              <span>
-                Shackleton region<small>South-pole candidate</small>
-              </span>
-            </div>
-            <div className="moon-callout">
-              <span className="mono-caps">The right place. The right time.</span>
-              <p>
-                <Sun />
-                Sun above the terrain
-              </p>
-              <p>
-                <Earth />
-                Earth above the horizon
-              </p>
-              <span className="small muted">Choose a site to calculate a window.</span>
-              <ProvenanceBadge
-                kind="Illustrative"
-                detail="Decorative lunar image; use the explorer for the computed terrain and estimated visibility."
-              />
-            </div>
-          </div>
-        </section>
+        <LandingHero onExplore={() => setView("explorer")} onCompare={() => setView("compare")} />
         <section className="landing-stats" aria-label="Data coverage">
           <StatTile
             label="Candidate regions"

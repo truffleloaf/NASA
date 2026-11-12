@@ -1,5 +1,5 @@
 "use client";
-import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PCFSoftShadowMap } from "three";
 import type { MissionState } from "../mission/use-mission";
@@ -29,15 +29,15 @@ class SceneBoundary extends Component<{ children: ReactNode; onError: () => void
   }
 }
 function FrameMeter({ report }: { report: (text: string) => void }) {
-  let count = 0,
-    start = 0;
-  useFrame(({ clock }) => {
-    const now = clock.elapsedTime;
-    count++;
-    if (now - start >= 1) {
-      report(`${Math.round(count / (now - start))} rendered fps`);
-      start = now;
-      count = 0;
+  const frames = useRef({ count: 0, start: 0 });
+  useFrame(() => {
+    const now = performance.now();
+    if (!frames.current.start) frames.current.start = now;
+    frames.current.count++;
+    if (now - frames.current.start >= 1000) {
+      report(`${Math.round((frames.current.count * 1000) / (now - frames.current.start))} rendered fps`);
+      frames.current.start = now;
+      frames.current.count = 0;
     }
   });
   return null;
@@ -74,6 +74,7 @@ export default function Scene(props: SceneProps) {
   return (
     <SceneBoundary onError={props.onFallback}>
       <Canvas
+        className="terrain-arrival"
         role="img"
         aria-label={description}
         dpr={[1, 2]}
