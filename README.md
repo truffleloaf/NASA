@@ -11,7 +11,8 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. To test from a phone on the same network, `npm run dev:lan`
+binds the dev server to all interfaces.
 
 ```sh
 npm test
