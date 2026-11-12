@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Orbit, FileDown, Link as LinkIcon, SlidersHorizontal, ArrowRight, HelpCircle } from "lucide-react";
 import { useMission, SITES } from "./use-mission";
 import { SetupPanel } from "./setup-panel";
@@ -124,38 +125,53 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
             Some bundled data could not be loaded. {m.error}
           </p>
         )}
-        {view === "explorer" ? (
-          <>
-            <div className="mobile-sites site-chips">
-              {SITES.map((site) => (
-                <Chip key={site.id} selected={m.config.site === site.id} onClick={() => m.update({ site: site.id })}>
-                  {site.name}
-                </Chip>
-              ))}
-            </div>
-            <div className="explorer-grid">
-              <Card className="setup-panel">
-                <SetupPanel mission={m} onFind={find} />
-              </Card>
-              <div className="center-column">
-                <MapPanel mission={m} />
-                <TimePanel mission={m} />
-              </div>
-              <InsightsPanel mission={m} />
-            </div>
-          </>
-        ) : view === "compare" ? (
-          <CompareView mission={m} onExplore={() => changeView("explorer")} />
-        ) : view === "windows" ? (
-          <WindowsView
-            mission={m}
-            onExplore={() => {
-              changeView("explorer");
-            }}
-          />
-        ) : (
-          <BriefView mission={m} />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={view}
+            className="view-transition"
+            initial={m.reduced ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={m.reduced ? undefined : { opacity: 0, y: 8 }}
+            transition={{ duration: m.reduced ? 0 : 0.24, ease: [0.2, 0, 0, 1] }}
+          >
+            {view === "explorer" ? (
+              <>
+                <div className="mobile-sites site-chips">
+                  {SITES.map((site) => (
+                    <Chip
+                      key={site.id}
+                      selected={m.config.site === site.id}
+                      onClick={() => m.update({ site: site.id })}
+                    >
+                      {site.name}
+                    </Chip>
+                  ))}
+                </div>
+                <div className="explorer-grid">
+                  <Card className="setup-panel">
+                    <SetupPanel mission={m} onFind={find} />
+                  </Card>
+                  <div className="center-column">
+                    <MapPanel mission={m} />
+                    <TimePanel mission={m} />
+                  </div>
+                  <InsightsPanel mission={m} />
+                </div>
+              </>
+            ) : view === "compare" ? (
+              <CompareView mission={m} onExplore={() => changeView("explorer")} />
+            ) : view === "windows" ? (
+              <WindowsView
+                mission={m}
+                onExplore={() => {
+                  changeView("explorer");
+                }}
+              />
+            ) : (
+              <BriefView mission={m} />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
       <footer className="site-footer">
         <span>Visibility is an estimate, not a flight clearance.</span>

@@ -5,6 +5,7 @@ import { Billboard } from "@react-three/drei";
 import { BufferAttribute, BufferGeometry, DoubleSide, Vector3 } from "three";
 import { horizonAt } from "@/lib/science";
 import type { MissionState } from "../mission/use-mission";
+import { Stars } from "./stars";
 const DEG = Math.PI / 180;
 export function SurfaceView({ mission: m, yaw }: { mission: MissionState; yaw: number }) {
   const { camera, invalidate } = useThree();
@@ -38,20 +39,7 @@ export function SurfaceView({ mission: m, yaw }: { mission: MissionState; yaw: n
     geo.setIndex(indices);
     return geo;
   }, [m.siteData, m.config.mast]);
-  const stars = useMemo(() => {
-    const geo = new BufferGeometry(),
-      points: number[] = [];
-    for (let i = 1; i < 260; i++) {
-      const a = i * 2.399963,
-        y = ((i * 0.618034) % 1) * 1.8 - 0.8,
-        r = Math.sqrt(1 - y * y);
-      points.push(Math.cos(a) * r * 60, y * 60, Math.sin(a) * r * 60);
-    }
-    geo.setAttribute("position", new BufferAttribute(new Float32Array(points), 3));
-    return geo;
-  }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  useEffect(() => () => stars.dispose(), [stars]);
   const position = (az: number, el: number) =>
     new Vector3(
       Math.sin(az * DEG) * Math.cos(el * DEG),
@@ -60,9 +48,7 @@ export function SurfaceView({ mission: m, yaw }: { mission: MissionState; yaw: n
     ).multiplyScalar(30);
   return (
     <>
-      <points geometry={stars}>
-        <pointsMaterial size={0.025} color="#9AA3B2" sizeAttenuation />
-      </points>
+      <Stars />
       <mesh geometry={geometry}>
         <meshBasicMaterial color="#232A36" side={DoubleSide} />
       </mesh>

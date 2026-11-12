@@ -97,7 +97,7 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
                   start = offset;
                 offset += days;
                 return (
-                  <div className="heatmap-row" key={month}>
+                  <div className="heatmap-row" key={month} style={{ animationDelay: `${month * 20}ms` }}>
                     <span className="mono">
                       {new Date(Date.UTC(2026, month, 1)).toLocaleString("en", { month: "short", timeZone: "UTC" })}
                     </span>

@@ -7,6 +7,8 @@ import type { OrbitControls as Controls } from "three-stdlib";
 import header from "@/public/data/terrain/polar-1024.json";
 import { SITES } from "../mission/use-mission";
 import type { SceneProps } from "./scene";
+import { Stars } from "./stars";
+import { DirectionMarker } from "./direction-marker";
 const SCALE = 25,
   RADIUS = 304 / SCALE,
   DEG = Math.PI / 180;
@@ -109,6 +111,7 @@ export function PolarTerrain({
     earth = direction(m.sample?.earthAz ?? 0, 8, RADIUS);
   return (
     <>
+      <Stars />
       <ambientLight intensity={0.14} />
       {m.sample && (
         <directionalLight
@@ -169,22 +172,8 @@ export function PolarTerrain({
         ))}
       {m.sample && (
         <>
-          <Line points={[selected, rimSun]} color="#F4B860" transparent opacity={0.45} lineWidth={1} />
-          <mesh position={rimSun}>
-            <sphereGeometry args={[0.12, 16, 12]} />
-            <meshBasicMaterial color="#F4B860" />
-          </mesh>
-          <Html position={rimSun} center>
-            <span className="rim-label tone-sun">SUN</span>
-          </Html>
-          {layers.cone && <Line points={[selected, earth]} color="#62B6FF" transparent opacity={0.65} />}
-          <mesh position={earth}>
-            <sphereGeometry args={[0.12, 16, 12]} />
-            <meshBasicMaterial color="#62B6FF" />
-          </mesh>
-          <Html position={earth} center>
-            <span className="rim-label tone-earth">EARTH</span>
-          </Html>
+          <DirectionMarker target={rimSun} origin={selected} body="sun" reduced={m.reduced} />
+          <DirectionMarker target={earth} origin={selected} body="earth" reduced={m.reduced} showLine={layers.cone} />
         </>
       )}
       <OrbitControls

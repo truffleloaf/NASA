@@ -1,4 +1,5 @@
 import { ArrowRight, Download } from "lucide-react";
+import type { CSSProperties } from "react";
 import { formatTime, suggestRelaxation } from "@/lib/science";
 import type { MissionState } from "./use-mission";
 import { Card } from "../ui/card";
@@ -36,7 +37,11 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
       ) : (
         <div className="window-list">
           {m.result.windows.map((win, i) => (
-            <Card className="window-row" key={win.id}>
+            <Card
+              className="window-row"
+              key={win.id}
+              style={{ "--row-delay": `${i * 40}ms`, animationName: i < 8 ? undefined : "none" } as CSSProperties}
+            >
               <span className="window-rank mono">{String(i + 1).padStart(2, "0")}</span>
               <div>
                 <h2>
