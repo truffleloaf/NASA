@@ -88,8 +88,8 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
         />
         <div className="header-actions">
           <ProvenanceBadge
-            kind="Computed"
-            detail="Source ephemerides and DEM are computed. Window predictions and horizon masks are estimated."
+            kind="Estimated"
+            detail="JPL directions and DEM values are Computed; terrain horizons and every visibility, uptime or window number are Estimated."
           />
           <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
             <LinkIcon />

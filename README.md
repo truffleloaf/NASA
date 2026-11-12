@@ -21,6 +21,8 @@ npm run build
 
 The production build exports a static site to `out/`. Serve that directory with any static host. There is no backend, authentication, database, or scientific API integration.
 
+For a production build, set `NEXT_PUBLIC_SITE_URL` to the deployed origin (for example `https://your-host`) before `npm run build`. The Open Graph image is referenced by an absolute URL, so without it the share card falls back to `http://localhost:3000`.
+
 ## Experience
 
 - Cinematic landing and a textured 3D Moon with orbit, zoom, south-pole focus, selectable markers, and illustrative overlays.
