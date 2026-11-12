@@ -34,6 +34,14 @@ Interpolate the two mast profiles only as an estimated sensitivity model. An 80-
 
 This validates hourly interpolation consistency against finer samples from the **same** ephemeris, not independent ephemeris accuracy. The reference is a flat astronomical horizon and solar centre; it does not validate terrain sunrise/sunset or solar upper-limb contact. Do not claim independent JPL agreement for the terrain-based windows. Hourly visibility sampling can miss short windows and shift boundaries by as much as one sample interval; one-minute consistency results do not remove that limitation.
 
+## Terrain reproducibility check
+
+`check_reproducibility.py` re-runs the committed generator against the published source DEM and compares the result with the shipped `horizon/*.json`: the site elevation, the source hash recorded in each asset, the ray parameters, and 360 skyline angles at both mast heights. It imports `terrain.py`'s own `horizon_profiles()` rather than reimplementing the ray march, because the question is whether the assets still match the committed code, not whether the code is right.
+
+On the shipped assets, all 2,160 skyline angles reproduce within 0.01° (measured maximum 0.0000°), and the source file hash matches the one recorded in every asset.
+
+This is a drift guard, not a physical validation. It cannot detect a wrong-but-consistent pipeline: if the ray march were wrong in the same way on both sides, the comparison would still pass. Agreement means the shipped numbers can be rebuilt from published data, not that they are correct.
+
 ## Reproduce
 
 Run from the repository root. Python's standard library handles ephemerides and integrity checks; only terrain preparation requires NumPy. A full rerun downloads approximately 116 MB of source terrain plus cached text ephemerides. The source/cache directory is intentionally not a runtime asset.
@@ -48,6 +56,7 @@ work/data-venv/bin/python scripts/terrain.py --source work/data-source/LDEM_80S_
 python3 scripts/ephemeris.py
 python3 scripts/validate_ephemeris.py
 work/data-venv/bin/python scripts/terrain.py --self-test
+work/data-venv/bin/python scripts/check_reproducibility.py --source work/data-source/LDEM_80S_80M.IMG
 python3 scripts/ephemeris.py --self-test
 python3 scripts/validate_ephemeris.py --self-test
 python3 scripts/check_data.py
