@@ -3,20 +3,32 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/space-grotesk";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
-// Absolute URLs in `metadata` (the Open Graph image below) need a base. Set
-// NEXT_PUBLIC_SITE_URL to the deployed origin at build time; the localhost
-// fallback keeps `npm run build` warning-free in development, but a production
-// build that leaves it unset will publish localhost share-card URLs.
-function siteBase(value: string | undefined): URL {
-  const raw = value?.trim() || "http://localhost:3000";
-  try {
-    return new URL(raw);
-  } catch {
-    throw new Error(`NEXT_PUBLIC_SITE_URL must be an absolute URL, got "${raw}"`);
+// Absolute URLs in `metadata` (the Open Graph image below) need a base. Hosts
+// disagree on which variable carries the public origin, so try the explicit
+// override first, then the platform conventions, then local development.
+// A value without a scheme (VERCEL_URL is a bare host) is assumed to be https.
+const SITE_BASE_VARIABLES = [
+  "NEXT_PUBLIC_SITE_URL",
+  "VERCEL_PROJECT_PRODUCTION_URL",
+  "VERCEL_URL",
+  "URL",
+  "DEPLOY_PRIME_URL",
+  "CF_PAGES_URL",
+] as const;
+function siteBase(): URL {
+  for (const name of SITE_BASE_VARIABLES) {
+    const raw = process.env[name]?.trim();
+    if (!raw) continue;
+    try {
+      return new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    } catch {
+      throw new Error(`${name} is not a usable absolute URL: "${raw}"`);
+    }
   }
+  return new URL("http://localhost:3000");
 }
 export const metadata: Metadata = {
-  metadataBase: siteBase(process.env.NEXT_PUBLIC_SITE_URL),
+  metadataBase: siteBase(),
   title: "Lunar — Mission Navigator",
   description:
     "Find estimated lunar south-pole operating windows using bundled JPL ephemerides and LOLA terrain. Explore, compare and trace every result to its source.",

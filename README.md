@@ -21,7 +21,7 @@ npm run build
 
 The production build exports a static site to `out/`. Serve that directory with any static host. There is no backend, authentication, database, or scientific API integration.
 
-For a production build, set `NEXT_PUBLIC_SITE_URL` to the deployed origin (for example `https://your-host`) before `npm run build`. The Open Graph image is referenced by an absolute URL, so without it the share card falls back to `http://localhost:3000`.
+`metadataBase` — the base that turns the Open Graph image path into an absolute URL — is resolved at build time from the first of `NEXT_PUBLIC_SITE_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_URL`, `URL`, `DEPLOY_PRIME_URL` or `CF_PAGES_URL` that is set, so the usual hosts need no configuration. Set `NEXT_PUBLIC_SITE_URL` when none of them is; with nothing set the share card falls back to `http://localhost:3000`.
 
 ## Experience
 
