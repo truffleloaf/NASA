@@ -42,7 +42,7 @@ On the shipped assets, all 2,160 skyline angles reproduce within 0.01° (measure
 
 ## Cross-product terrain check
 
-The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_85S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline on branch `backend/pipeline`. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site.
+The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_85S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline's legacy convention clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site.
 
 | site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m | annual sunlight, 40 m |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -51,6 +51,8 @@ The horizons are also compared against an independent terrain product and ray ma
 | de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.44° | 0.66° | 30.5 % | 30.1 % |
 
 Where the two products overlap, the skyline agrees to well under a degree and the annual illumination fraction to within 0.4 percentage points, despite a 2× difference in elevation sampling and separate code.
+
+`backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. A 2026-11-13 run reproduces the complete-azimuth counts, medians, maxima and most annual fractions, but measures **Shackleton p95 0.26°** (table above: 0.01°) and **de Gerlache 40 m annual 29.0 %** (table above: 30.1 %). Those two cells were computed with a different percentile/annual method; the script prints the discrepancy instead of hiding it. Regenerate the table with the script or document the method difference before quoting those cells.
 
 Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And Malapert and de Gerlache are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray for those sites, leaving 43 % and 29 % of their sky unchecked.
 
@@ -77,5 +79,13 @@ python3 scripts/check_data.py
 ```
 
 Run in this order: terrain preparation recreates the manifest, then ephemeris preparation marks it ready. Ephemeris requests reuse files in `work/data-source/`; remove the relevant cached text file to request refreshed source data. A future Horizons model update can change regenerated values and response hashes. Data source labels and per-query metadata record what was actually used.
+
+The independent 40 m cross-check lives in `backend/pipeline/cross_product.py` and needs `backend/data/dem/ldem_85s_40m.img`, downloaded by `backend/pipeline/fetch_dem.py` (about 115 MB). It reads the committed `public/data` assets, not a generated copy:
+
+```sh
+python backend/pipeline/cross_product.py \
+    --source backend/data/dem/ldem_85s_40m.img \
+    --label  backend/data/dem/ldem_85s_40m.lbl --check
+```
 
 No radio link budget, diffraction, spacecraft relay, power storage, solar-array orientation, subpixel hazards, terrain uncertainty propagation or communication hardware constraints are modeled. Earth-centre clearance is a geometric visibility criterion, not a guarantee of an operational communications link.
