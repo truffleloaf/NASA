@@ -54,13 +54,15 @@ Where the two products overlap, the skyline agrees to well under a degree (p95 �
 
 `backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-13 run is the source of the numbers above; the script's `--check` mode guards them.
 
+CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/` or this file changes. The workflow caches the 115 MB 40 m DEM, re-downloads it on a cache miss, and then asserts that the check did not modify `public/data/`.
+
 Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And Malapert and de Gerlache are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray for those sites, leaving 43 % and 29 % of their sky unchecked.
 
 This is a drift guard, not a physical validation. It cannot detect a wrong-but-consistent pipeline: if the ray march were wrong in the same way on both sides, the comparison would still pass. Agreement means the shipped numbers can be rebuilt from published data, not that they are correct.
 
 ## Reproduce
 
-Run from the repository root. Python's standard library handles ephemerides and integrity checks; only terrain preparation requires NumPy. A full rerun downloads approximately 116 MB of source terrain plus cached text ephemerides. The source/cache directory is intentionally not a runtime asset.
+Run from the repository root. Python's standard library handles ephemerides and integrity checks; only terrain preparation requires NumPy. A full rerun downloads approximately 116 MB of source terrain plus cached text ephemerides. The source/cache directory is intentionally not a runtime asset. Only `scripts/` writes `public/data/`; see `scripts/README.md` for the ownership rule.
 
 ```sh
 mkdir -p work/data-source

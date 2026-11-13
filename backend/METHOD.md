@@ -316,7 +316,7 @@ recomputes the same 1° skyline from the 40 m DEM at the 40 m pipeline's 0.5° b
 clamps both sides at 0°, and compares only azimuths where the 40 m ray reaches at least 95 %
 of 150 km. The measured table is:
 
-| site | complete | 2 m median Δ | 20 m median Δ | 2 m p95 | 2 m max | annual sun 80 m | annual sun 40 m |
+| site | complete | 2 m median Δ | 20 m median Δ | 2 m p95 | 2 m max | annual sun 80 m (clamped) | annual sun 40 m (clamped) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Shackleton | 360/360 | −0.01° | −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
 | Malapert | 205/360 | 0.00° | 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
@@ -426,8 +426,9 @@ skyline; `cross_product.py` compares the shipped 80 m assets with the 40 m recom
 reports any drift from the documented table; `check_frontend_tests.py` runs the frontend's own
 contract suite instead of duplicating it in Python.
 
-Legacy, kept only for historical comparison with the deleted `lib/mission.ts`:
-`export_data.py` and `check_export.py`.
+The old exporter (`export_data.py`), its checker (`check_export.py`) and
+`backend/export/data/` were removed. `public/data/` has exactly one writer: the
+repository-root `scripts/`. This backend only reads that directory for cross-checks.
 
 ---
 

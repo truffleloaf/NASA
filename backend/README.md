@@ -41,8 +41,10 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | Numerical convergence | **done** | ray step and ray range sensitivity measured |
 | Cross-product terrain check | **done** | `cross_product.py` compares shipped 80 m assets with 40 m recomputation |
 | `METHOD.md` | **done** | sources, method, validation, uncertainty budget, limitations |
-| Export to `public/data/` | **legacy** | `export_data.py` writes the pre-redesign contract; the current frontend does not read it |
-| Old contract check | **legacy** | `check_export.py` targets the deleted `lib/mission.ts`; kept for history |
+
+This backend **never writes `public/data/`**. That directory is generated only by the
+repository-root `scripts/`; the old `export_data.py` and its `export/data` product were
+removed so there is no second writer to accidentally copy.
 
 ## Layout
 
@@ -59,11 +61,9 @@ backend/
 │  ├─ run_annual.py           full-year visibility, clamped and unclamped (Phase 2)
 │  ├─ cross_product.py        shipped 80 m vs independent 40 m terrain table
 │  ├─ check_convergence.py    ray step and ray range sensitivity (unclamped skyline)
-│  ├─ demo_geometric.py       two-site comparison, no terrain
+│  ├─ demo_geometric.py       three-site Sun/Earth comparison, no terrain
 │  ├─ scan_windows.py         which 7-day periods actually contain windows
-│  ├─ check_frontend_tests.py run the frontend's npm test/typecheck/build
-│  ├─ export_data.py          LEGACY: pre-redesign JSON contract, not consumed
-│  └─ check_export.py         LEGACY: old contract replay, kept for history
+│  └─ check_frontend_tests.py run the frontend's npm test/typecheck/build
 └─ data/                      generated, not committed (see data/README.md)
 ```
 
@@ -98,14 +98,20 @@ Current validation path:
 `cross_product.py` reads the frontend's committed `public/data` assets, so run it from the
 repository root after `npm ci`/build. It accepts `--assets` to point at another checkout.
 
-Legacy commands, kept for historical comparison only:
+CI (`.github/workflows/backend-data-check.yml`) runs `cross_product.py --check` when
+`public/data/`, `backend/`, `scripts/` or `docs/DATA.md` changes. It caches the 40 m DEM and
+then verifies that the check did not modify `public/data/`.
+
+Historical/auxiliary commands (they do **not** write `public/data`):
 
 ```sh
-.venv/Scripts/python backend/pipeline/export_data.py           # old index.json/sites/*.json, not consumed
-.venv/Scripts/python backend/pipeline/check_export.py          # old lib/mission.ts contract
 .venv/Scripts/python backend/pipeline/demo_geometric.py        # three-site Sun/Earth comparison, no terrain
-.venv/Scripts/python backend/pipeline/scan_windows.py          # which weeks contain windows
+.venv/Scripts/python backend/pipeline/scan_windows.py          # which weeks contain windows (legacy rules)
 ```
+
+The old exporter (`export_data.py`), its checker (`check_export.py`) and the
+`backend/export/data/` product were removed. If `public/data` needs regeneration, run the
+root `scripts/` only; the backend has no writer for it.
 
 `run_annual.py` and the other ephemeris users read the cache in `data/horizons/`. If it is
 absent they fetch from JPL and write it, so the first run needs network and later runs do not.
@@ -235,17 +241,15 @@ profiles; nothing is fetched from a backend at runtime.
 `cross_product.py` is the only backend code that reads this product. It is a check, not a
 generator: it compares the shipped 80 m horizons with an independent 40 m recomputation.
 
-## Legacy export (not consumed)
+## One writer only
 
-`export_data.py` still writes the pre-redesign `index.json` + `sites/*.json` contract into
-`backend/export/data/`. The current frontend does not read it. It is kept for historical
-comparison with the old `lib/mission.ts` window logic; do not copy it into `public/data/`.
+`public/data/` has exactly one writer: the repository-root `scripts/`. The old
+`export_data.py` and `backend/export/data/` were removed, so the backend cannot accidentally
+produce a second, divergent asset set. `cross_product.py` is read-only over `public/data`.
 
-The old contract shipped four things: per-site metadata, a 60-minute series in 0.01°
-integers, absolute UTC `visibility` intervals at 10-minute resolution, and annual coverage
-summaries. Two of its old design decisions are now obsolete: the frontend does its own
-window matching (`lib/science.ts`), and the current assets keep negative skyline angles
-instead of clamping at 0°.
+If you find a backend script that writes into `public/data/`, treat it as a bug: the frontend
+build imports `manifest.json`, `terrain/polar-1024.json` and `validation.json` statically, and
+a second writer would silently change what ships.
 
 ## Findings that affect the frontend
 

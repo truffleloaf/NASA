@@ -9,8 +9,9 @@ is copied into it.
 | `horizons/` | `pipeline/horizons.py` (on first fetch) | ~830 kB | no |
 | `dem/` | `pipeline/fetch_dem.py` (40 m `LDEM_85S_40M`) | ~115 MB | **no** — exceeds repository limits |
 
-The legacy product under `../export/data/` is committed separately; it is the pre-redesign
-contract and the current frontend does not read it.
+`public/data/` is not generated here. It is written only by the repository-root `scripts/`;
+the backend reads it for cross-checks and never writes it. The old `export/data/` product was
+removed with the legacy exporter.
 
 To rebuild the validation caches and run the checks:
 
