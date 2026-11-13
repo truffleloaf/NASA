@@ -17,8 +17,8 @@ import { Card } from "../ui/card";
 import { Chip } from "../ui/chip";
 import { ProvenanceBadge } from "../ui/provenance-badge";
 export default function AppShell({ initialView, onHome }: { initialView: string; onHome: () => void }) {
-  const m = useMission(),
-    [view, setView] = useState(["compare", "windows", "brief"].includes(initialView) ? initialView : "explorer");
+  const [view, setView] = useState(["compare", "windows", "brief"].includes(initialView) ? initialView : "explorer");
+  const m = useMission(view);
   const [limits, setLimits] = useState(false),
     [tour, setTour] = useState(-1);
   useEffect(() => {
@@ -32,8 +32,13 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
     setView(next);
     const url = new URL(location.href);
     url.searchParams.set("view", next);
-    history.replaceState(null, "", url);
+    history.pushState(null, "", url);
   };
+  useEffect(() => {
+    const restore = () => setView(new URLSearchParams(location.search).get("view") || "explorer");
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, []);
   const closeTour = () => {
     setTour(-1);
     try {
@@ -104,8 +109,8 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
       <main id="main" tabIndex={-1}>
         <div className="workspace-topline">
           <div>
-            <span className="mono-caps">Lunar south pole / mission planning</span>
-            <p>Understand the overlap. Plan for the limits.</p>
+            <span className="mono-caps">Mission workspace</span>
+            <p>Choose a place. Find the overlap.</p>
           </div>
           <div className="button-row">
             <button className="action-outline setup-trigger" onClick={() => setLimits(true)}>
@@ -155,7 +160,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
                     <MapPanel mission={m} />
                     <TimePanel mission={m} />
                   </div>
-                  <InsightsPanel mission={m} />
+                  <InsightsPanel mission={m} onCompare={() => changeView("compare")} />
                 </div>
               </>
             ) : view === "compare" ? (

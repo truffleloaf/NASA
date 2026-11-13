@@ -1,4 +1,5 @@
 "use client";
+import { coordinates } from "@/lib/planning";
 import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { analyzeSite, type SiteId } from "@/lib/science";
@@ -27,10 +28,11 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
         <div>
           <Segmented
             label="Compare antenna mast height"
-            value={m.config.mast === 20 ? "20" : "2"}
+            value={String(m.config.mast)}
             options={[
               { value: "2", label: "2 m mast" },
               { value: "20", label: "20 m mast" },
+              ...(![2,20].includes(m.config.mast) ? [{ value: String(m.config.mast), label: `Custom · ${m.config.mast} m` }] : []),
             ]}
             onChange={(v) => m.update({ mast: Number(v) })}
           />
@@ -46,7 +48,7 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
             </div>
             <h2>{site.name}</h2>
             <p className="mono small muted">
-              {Math.abs(site.lat)}° S · {site.lon}° E
+              {coordinates(site.lat, site.lon)}
             </p>
             <div className="comparison-stats">
               <StatTile label="Longest window" value={m.results[site.id].longest} unit="h" accent="ok" />

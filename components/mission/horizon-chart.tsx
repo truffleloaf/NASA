@@ -29,8 +29,10 @@ export function HorizonChart({
           strokeWidth="1"
         />
         <path d={`M0 ${y(0)}H360`} stroke="var(--line-strong)" strokeDasharray="3 4" />
-        <circle cx={sample.sunAz} cy={y(sample.sunEl)} r="4" fill="var(--sun)" />
-        <circle cx={sample.earthAz} cy={y(sample.earthEl)} r="4" fill="var(--earth)" />
+        <path d={`M${sample.sunAz} ${y(sample.sunEl)}V88`} stroke="var(--sun)" opacity="0.4" strokeDasharray="2 3" />
+        <path d={`M${sample.earthAz} ${y(sample.earthEl)}V88`} stroke="var(--earth)" opacity="0.4" strokeDasharray="2 3" />
+        <circle cx={sample.sunAz} cy={y(sample.sunEl)} r="4" fill="var(--sun)"><title>Sun: {sample.sunEl.toFixed(2)}° elevation, {sample.sunAz.toFixed(2)}° azimuth · Computed</title></circle>
+        <circle cx={sample.earthAz} cy={y(sample.earthEl)} r="4" fill="var(--earth)"><title>Earth: {sample.earthEl.toFixed(2)}° elevation, {sample.earthAz.toFixed(2)}° azimuth · Computed</title></circle>
         {["N", "E", "S", "W", "N"].map((label, i) => (
           <text
             key={i}
@@ -45,7 +47,7 @@ export function HorizonChart({
         ))}
       </svg>
       <div className="small muted">
-        Terrain skyline at the selected mast height. <ProvenanceBadge />
+        <span className="tone-sun">Sun</span> · <span className="tone-earth">Earth</span> · terrain skyline <ProvenanceBadge />
       </div>
     </>
   );

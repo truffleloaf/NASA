@@ -45,11 +45,19 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           onChange={setMode}
         />
       </div>
+      <div className="scene-readout">
+        <span className={m.sample?.sun && m.sample?.earth ? "tone-ok" : "muted"}>
+          <i className="readout-dot" />
+          {!m.sample ? "Loading conditions" : m.sample.sun && m.sample.earth ? "Sun and Earth visible" : "Visibility limited by terrain"}
+        </span>
+        <span>Selected hour · <ProvenanceBadge /></span>
+      </div>
+      {m.selectedWindow && <p className="selected-window-label">Selected operating window · <ProvenanceBadge /></p>}
       <div className="terrain-stage">
         {m.loading ? (
           <Skeleton className="scene-loading" label="Reading local ephemeris" />
         ) : flat ? (
-          <PolarFallback mission={m} />
+          <><PolarFallback mission={m} /><button className="retry-terrain action-outline" onClick={() => setFlat(false)}>Retry 3D terrain</button></>
         ) : (
           <Scene
             mission={m}
@@ -68,12 +76,13 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           />
         </div>
         <div className="map-tools">
-          <details className="layers-menu">
+          {mode === "polar" && <details className="layers-menu">
             <summary className="icon-control" aria-label="Map layers">
               <Layers />
             </summary>
             <div>
               <strong>Map layers</strong>
+              <p className="small muted">Display controls. Window calculations stay unchanged.</p>
               {Object.entries({
                 shadows: "Terrain shadows",
                 heat: "Illumination tint",
@@ -95,11 +104,12 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
                 2D accessible map
               </label>
             </div>
-          </details>
+          </details>}
           <button className="icon-control" aria-label="Reset terrain view" onClick={() => setReset((v) => v + 1)}>
             <RotateCcw />
           </button>
         </div>
+        {!flat && mode === "polar" && <span className="scene-hint">Drag to orbit · scroll to zoom</span>}
         {mode === "polar" && (
           <label className="exaggeration">
             Relief{" "}
@@ -141,7 +151,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
         <ProvenanceBadge detail="JPL directions are Computed; terrain clearance and visibility are Estimated." />
       </div>
       <details className="map-data">
-        <summary>Read position and horizon data</summary>
+        <summary>Position & horizon details</summary>
         <table>
           <caption>Current directions: Computed. Terrain horizon: Estimated.</caption>
           <thead>

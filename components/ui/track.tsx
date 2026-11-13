@@ -6,7 +6,9 @@ export function Track({
   hour,
   accent,
   onSelect,
+  selected,
 }: {
+  selected?: Interval;
   label: string;
   intervals: Interval[];
   total: number;
@@ -24,6 +26,8 @@ export function Track({
         {intervals.map((v, i) => (
           <button
             type="button"
+            aria-pressed={selected?.start === v.start}
+            className={selected?.start === v.start ? "selected-window" : ""}
             key={`${v.start}:${v.end}`}
             style={{
               left: `${(v.start / (total || 1)) * 100}%`,
@@ -31,7 +35,7 @@ export function Track({
             }}
             onClick={() => onSelect(v)}
             aria-label={`${label}, ${v.start} to ${v.end} hours after period start, ${v.end - v.start} hours, estimated`}
-            title={`${v.end - v.start} hours · Estimated`}
+            title={`Hour ${v.start} → ${v.end} · ${v.end - v.start} hours · Estimated`}
           >
             <span />
           </button>

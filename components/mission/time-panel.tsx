@@ -38,7 +38,7 @@ export function TimePanel({ mission: m }: { mission: MissionState }) {
             <select value={m.speed} onChange={(e) => m.setSpeed(Number(e.target.value))}>
               {[1, 6, 24, 168].map((n) => (
                 <option key={n} value={n}>
-                  {n}×
+                  {{1:"1 h/s",6:"6 h/s",24:"1 d/s",168:"1 wk/s"}[n]}
                 </option>
               ))}
             </select>
@@ -79,12 +79,13 @@ export function TimePanel({ mission: m }: { mission: MissionState }) {
         onSelect={(v) => jump(v.start)}
       />
       <Track
+        selected={m.result.windows.find(w => w.id === m.selectedWindow)}
         label="Windows"
         accent="ok"
         intervals={m.result.windows}
         total={m.result.hours}
         hour={m.config.hour}
-        onSelect={(v) => jump(v.start)}
+        onSelect={(v) => { jump(v.start); m.setSelectedWindow(m.result.windows.find(w => w.start === v.start)?.id ?? null); }}
       />
       <p className="small muted">
         {m.reduced

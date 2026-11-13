@@ -4,7 +4,6 @@ import manifest from "@/public/data/manifest.json";
 import {
   analyzeSite,
   dateMs,
-  DEFAULT_CONFIG,
   HOUR,
   hoursInPeriod,
   sampleAt,
@@ -14,11 +13,12 @@ import {
   type SiteData,
   type SiteId,
 } from "@/lib/science";
-import { decodeConfig, encodeConfig, windowsCSV } from "@/lib/share";
+import { encodeConfig, windowsCSV } from "@/lib/share";
+import { START_CONFIG, restoreSettings } from "@/lib/planning";
 export const SITES = manifest.sites as Site[];
 export type MissionState = ReturnType<typeof useMission>;
-export function useMission() {
-  const [config, setConfig] = useState<MissionConfig>(DEFAULT_CONFIG),
+export function useMission(view: string) {
+  const [config, setConfig] = useState<MissionConfig>(START_CONFIG),
     [data, setData] = useState<Partial<Record<SiteId, SiteData>>>({});
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -41,10 +41,12 @@ export function useMission() {
   }, []);
   useEffect(() => {
     const restore = () => {
-      if (location.hash) {
-        const parsed = decodeConfig(location.hash);
-        if (parsed) setConfig(parsed);
-        else notify("This link has invalid settings. Defaults restored.");
+      let saved = location.hash;
+      if (!saved) { try { saved = sessionStorage.getItem("lunar-settings") || ""; } catch {} }
+      if (saved) {
+        const parsed = restoreSettings(saved);
+        setConfig(parsed || START_CONFIG);
+        if (!parsed) notify("This link has invalid or outdated settings. A valid starting window is restored.");
       }
       setRestored(true);
     };
@@ -53,8 +55,14 @@ export function useMission() {
     return () => window.removeEventListener("hashchange", restore);
   }, [notify]);
   useEffect(() => {
-    if (restored) history.replaceState(null, "", location.pathname + location.search + encodeConfig(config));
-  }, [config, restored]);
+    if (!restored || playing) return;
+    const timer = setTimeout(() => {
+      const hash = encodeConfig(config);
+      history.replaceState(null, "", location.pathname + location.search + hash);
+      try { sessionStorage.setItem("lunar-settings", hash); } catch {}
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [config, restored, playing]);
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => setMessage(""), 3200);
@@ -141,6 +149,7 @@ export function useMission() {
     return () => cancelAnimationFrame(frame);
   }, [playing, speed, reduced, period]);
   useEffect(() => {
+    if (view !== "explorer") { setPlaying(false); return; }
     const handler = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (target.closest('input,textarea,select,button,a,[role="dialog"],[contenteditable="true"]')) return;
@@ -161,10 +170,10 @@ export function useMission() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [period, reduced]);
+  }, [period, reduced, view]);
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(location.origin + "/" + encodeConfig(config));
+      await navigator.clipboard.writeText(location.origin + "/?view=explorer" + encodeConfig(config));
       notify("Link copied. It restores these exact mission settings.");
     } catch {
       notify("Copy is unavailable. Copy the address from your browser instead.");

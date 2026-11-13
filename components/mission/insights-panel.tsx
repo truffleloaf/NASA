@@ -1,5 +1,6 @@
+import { adviceFor } from "@/lib/planning";
 import { Earth, Sun, ArrowUpRight } from "lucide-react";
-import { formatTime, suggestRelaxation } from "@/lib/science";
+import { formatTime } from "@/lib/science";
 import { SITES, type MissionState } from "./use-mission";
 import { Card } from "../ui/card";
 import { SectionLabel } from "../ui/section-label";
@@ -7,7 +8,7 @@ import { StatTile } from "../ui/stat-tile";
 import { ScoreRing } from "../ui/score-ring";
 import { ProvenanceBadge } from "../ui/provenance-badge";
 import { HorizonChart } from "./horizon-chart";
-export function InsightsPanel({ mission: m }: { mission: MissionState }) {
+export function InsightsPanel({ mission: m, onCompare }: { mission: MissionState; onCompare: () => void }) {
   const best = m.result.windows[0],
     delta = (m.result.uptime ?? 0) - (m.result.baselineUptime ?? 0);
   const ranking = [...SITES].sort((a, b) => (m.results[b.id].longest ?? -1) - (m.results[a.id].longest ?? -1));
@@ -31,9 +32,9 @@ export function InsightsPanel({ mission: m }: { mission: MissionState }) {
                   <br />→ {formatTime(m.config, best.end)} UTC
                 </p>
               </div>
-              <ScoreRing available={best.end - best.start} required={m.config.duration} />
+              <ScoreRing available={best.end - best.start} required={m.result.hours} />
             </div>
-            <span className="success-label">Requested duration covered</span>
+            <span className="success-label">of the planning period in the best window</span>
             <div className="why-end">
               <SectionLabel>Why it ends</SectionLabel>
               <p>{best.why}</p>
@@ -42,8 +43,9 @@ export function InsightsPanel({ mission: m }: { mission: MissionState }) {
         ) : (
           <div className="empty-state">
             <h3>{m.loading ? "Reading local data…" : "No qualifying window"}</h3>
-            <p>{suggestRelaxation(m.result, m.config)}</p>
+            <p>{adviceFor(m.result, m.config)}</p>
             <ProvenanceBadge />
+            {!m.loading && <button className="action-outline" onClick={onCompare}>Explore other dates <ArrowUpRight /></button>}
           </div>
         )}
       </Card>
