@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-const inter = localFont({
-  src: "../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
-  variable: "--font-inter",
+const geist = localFont({
+  src: "../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2",
+  variable: "--font-geist",
   display: "swap",
 });
-const space = localFont({
-  src: "../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2",
-  variable: "--font-space",
-  display: "swap",
-});
-const jetbrains = localFont({
-  src: "../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2",
-  variable: "--font-jetbrains",
+const mono = localFont({
+  src: "../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 // Absolute URLs in `metadata` (the Open Graph image below) need a base. Hosts
@@ -60,7 +55,7 @@ export const metadata: Metadata = {
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${space.variable} ${jetbrains.variable}`}>
+    <html lang="en" className={`${geist.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );

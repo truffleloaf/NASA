@@ -69,15 +69,24 @@ Segmented, Chip, Slider (label, value, accent), StatTile, ScoreRing, ProvenanceB
 
 ## Atmosphere exception
 
-A decorative space background is allowed on the landing hero and as a faint star backdrop
-in the 3D scene. Never place it behind cards, tables, forms, or Windows, Compare, Brief,
-or Methods pages. Decorative tokens are --galaxy-core #2A3850, --galaxy-arm #1B2433,
-and --starlight #DDE3EE; never use them for UI chrome or data meaning.
-Decorative layers are aria-hidden and pointer-events none. Sun remains amber, Earth blue,
-and windows green. No glassmorphism or emoji. DOM/CSS animation changes only transform
-and opacity; only the star canvas and Three.js scenes use per-frame JavaScript animation.
-Use cubic-bezier(0.2, 0, 0, 1) and 150 / 240 / 600 ms for UI transitions. The specified
-slow galaxy rotation is linear. Reduced motion makes the atmosphere and entrances static.
+### Approved visual refinement — November 2026
+
+This section supersedes the original palette, typography and decorative restrictions above.
+Background #05070C, surface #0B1018, raised #121A26, text #F2F4F8, muted #8C97A8,
+hairlines white at 8%. Sun #FFC46B / #E8903A, Earth #5CC8FF / #3A7BFF,
+windows #4FE0B0, labelled warning #FF8A6B. Violet #7C8CFF is for galaxy/focus only.
+Geist is the only display/body family (400/500/600); Geist Mono is for numeric data.
+Both are bundled @fontsource-variable fonts. Sentence-case 13px labels, 12px captions,
+8px spacing grid, 16px cards, 56–72px hero. Primary actions are amber with dark text.
+Gradients are allowed in charts and tracks. Soft glow is allowed ONLY on Sun/Earth markers
+and the Moon limb. No glassmorphism. Cards stay flat with hairline highlights.
+The landing hero may contain a decorative GPU galaxy; explorer skies may contain faint
+stars. Never put decoration behind forms, charts or tables. Mask copy to AA contrast.
+Decorative motion, compressed libration and landing body positions are Illustrative.
+Use 150/240/600ms cubic-bezier(0.2,0,0,1); transform and opacity for DOM motion.
+Reduced motion and save-data use static landing visuals. Pause offscreen scenes.
+Scientific text updates immediately; lighting may ease to the selected Sun direction.
+No science engine, share codec, data, scripts or DATA.md edits in this visual pass.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
