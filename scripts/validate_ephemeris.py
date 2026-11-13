@@ -9,6 +9,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 from ephemeris import download, parse, query, write_json, START
+from contract import validate
 
 
 def crossing(rows, rising):
@@ -54,14 +55,16 @@ def build(output, cache):
                             'sourceUrl':fine_url,'sourceSha256':hashlib.sha256(fine_raw.encode()).hexdigest()}
         records.append(record)
         print(site['id'],'reference crossings checked',flush=True)
-    write_json(output/'validation.json',{'version':1,'provenance':'Estimated',
+    report = {'version':1,'provenance':'Estimated',
         'method':'Linear interpolation of solar-centre elevation through 0 degrees: hourly Horizons data versus separately queried one-minute Horizons data.',
         'source':'NASA/JPL Horizons DE441 apparent airless observer ephemeris',
         'documentation':'https://ssd.jpl.nasa.gov/horizons/manual.html','rows':records,
         'limitations':['This is a sampling/interpolation consistency check against the same ephemeris, not independent model validation.',
                        'Zero-elevation solar-centre crossings use a flat astronomical horizon; they are not terrain sunrise/sunset or upper-limb contacts.',
                        'Reference-east and reference-west use 2m above the reference sphere and are numerical test points, not surface operating sites.',
-                       'The first rising and first setting crossing in 2026 are selected independently and may belong to different lunations.']})
+                       'The first rising and first setting crossing in 2026 are selected independently and may belong to different lunations.']}
+    validate(report, 'validationReport')
+    write_json(output/'validation.json',report)
 
 
 def self_test():

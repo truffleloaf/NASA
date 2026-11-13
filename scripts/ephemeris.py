@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import urllib.parse
 import urllib.request
+from contract import validate
 
 START = datetime(2026,1,1,tzinfo=timezone.utc)
 END = datetime(2027,1,1,tzinfo=timezone.utc)
@@ -64,9 +65,11 @@ def build(output, cache):
             bodies.append([r for _,r in rows]);sources.append({'body':label,'url':url,'sha256':hashlib.sha256(raw.encode()).hexdigest(),'apiVersion':raw.splitlines()[0].replace('API VERSION: ','')})
         packed=[sun+earth for sun,earth in zip(*bodies)]
         body={'version':1,'siteId':site['id'],'start':START.isoformat().replace('+00:00','Z'),'end':END.isoformat().replace('+00:00','Z'),'stepHours':1,'fields':['sunAzimuthDegrees','sunElevationDegrees','sunDiameterDegrees','earthAzimuthDegrees','earthElevationDegrees','earthDiameterDegrees'],'rows':packed,'provenance':'Computed','source':{'name':'NASA/JPL Horizons, DE441','documentation':'https://ssd.jpl.nasa.gov/horizons/manual.html','queries':sources,'observer':{'center':'coord@301','coordinateType':'GEODETIC','latitudeDegrees':site['lat'],'eastLongitudeDegrees':site['lon'],'altitudeMeters':site['elevationMeters']+2},'coordinates':'Apparent airless azimuth/elevation, azimuth clockwise from north; angular diameters converted from arcseconds to degrees; UTC timestamps.'},'limitations':['Ephemeris directions are computed source values; terrain visibility and sampled intervals remain estimates.','One-hour samples do not resolve sub-hour visibility transitions.','Observer directions use2m above the sampled terrain; changing mast height changes horizon obstruction only (tiny18m observer parallax ignored).','No atmospheric refraction; no diffraction, link budget, relay spacecraft, solar panels, or terrain uncertainty model.']}
+        validate(body, 'ephemeris')
         write_json(output/'ephemeris'/f"{site['id']}.json",body)
         print(site['id'],len(packed),'hourly samples',flush=True)
     manifest['status']='ready';manifest['ephemerisProvenance']='Computed';manifest['visibilityProvenance']='Estimated'
+    validate(manifest, 'manifest')
     write_json(output/'manifest.json',manifest)
 
 

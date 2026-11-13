@@ -10,6 +10,7 @@ import json
 import math
 from pathlib import Path
 import numpy as np
+from contract import validate
 
 RADIUS_M = 1737400.0
 SOURCE_SIZE = 7600
@@ -20,6 +21,12 @@ SITES = [
     {'id': 'shackleton', 'name': 'Shackleton region', 'lat': -89.9, 'lon': 0.0},
     {'id': 'malapert', 'name': 'Malapert Massif', 'lat': -85.99, 'lon': 2.3},
     {'id': 'de-gerlache', 'name': 'de Gerlache region', 'lat': -88.7, 'lon': -68.7},
+    # Artemis III candidate regions (NASA, October 2024 down-selection). Coordinates are
+    # approximate regional references; see docs/DATA.md for the source and the constraints
+    # that keep every 150 km horizon ray inside the 80-90S source DEM.
+    {'id': 'mons-mouton', 'name': 'Mons Mouton', 'lat': -84.6, 'lon': 31.0},
+    {'id': 'nobile-rim-1', 'name': 'Nobile Rim 1', 'lat': -85.438, 'lon': 37.445},
+    {'id': 'haworth', 'name': 'Haworth', 'lat': -86.753, 'lon': -23.672},
 ]
 
 def sha256(path):
@@ -101,17 +108,24 @@ def build(source, output):
         'source':{'name':'NASA LRO LOLA LDEM_80S_80M V2.0','url':SOURCE_URL,'labelUrl':SOURCE_URL.replace('.IMG','.LBL'),'sha256':source_hash,'originalMetersPerPixel':80,'sourceEpoch':'2009-07-13 through 2017-02-02'},
         'provenance':'Computed','binarySha256':sha256(binary),'limitations':['Display resolution is approximately594m/pixel.','Render only the valid80-90S polar disc; square corners lie outside the stated latitude coverage.','Terrain is sampled topography, not an operational landing hazard map.']
     }
+    validate(header, 'terrainHeader')
     write_json(terrain/'polar-1024.json',header)
     manifest_sites=[]
     for site in SITES:
         elevation, profiles = horizon_profiles(dem, site)
+        limitations = ['Subpixel terrain and local hazards are unresolved.','No obstructions beyond150km assessed.','2-20m mast comparison is a sensitivity estimate, not a validated mast benefit.','Approximate site coordinates do not define validated landing locations.','Horizons MEAN_ME and LOLA DE421 ME/PA frames are not explicitly transformed; residual frame offsets are unquantified.']
+        if site['lat'] > -84.95:
+            limitations.append('Northern rays cross the 80 deg S latitude circle and sample the source DEM square corners, which lie outside the nominal 80-90S coverage; see docs/DATA.md.')
         body = {'version':1,'siteId':site['id'],'azimuthStepDegrees':1,'mastHeightsMeters':[2,20],'profiles':profiles,'provenance':'Estimated','source':header['source'],
           'method':'Maximum apparent elevation along great-circle rays with spherical lunar curvature; bilinear samples from original80m DEM; azimuth clockwise from geographic north.',
           'rayStepMeters':80,'rayLimitKm':150,'siteElevationMeters':round(elevation,2),
-          'limitations':['Subpixel terrain and local hazards are unresolved.','No obstructions beyond150km assessed.','2-20m mast comparison is a sensitivity estimate, not a validated mast benefit.','Approximate site coordinates do not define validated landing locations.','Horizons MEAN_ME and LOLA DE421 ME/PA frames are not explicitly transformed; residual frame offsets are unquantified.']}
+          'limitations':limitations}
+        validate(body, 'horizon')
         write_json(output/'horizon'/f"{site['id']}.json",body)
         manifest_sites.append({**site,'elevationMeters':round(elevation,2),'provenance':'Estimated','ephemeris':f"/data/ephemeris/{site['id']}.json",'horizon':f"/data/horizon/{site['id']}.json"})
-    write_json(output/'manifest.json',{'version':1,'year':2026,'terrain':'/data/terrain/polar-1024.bin','terrainHeader':'/data/terrain/polar-1024.json','sites':manifest_sites,'status':'terrain-ready','provenance':'Estimated'})
+    manifest = {'version':1,'year':2026,'terrain':'/data/terrain/polar-1024.bin','terrainHeader':'/data/terrain/polar-1024.json','sites':manifest_sites,'status':'terrain-ready','provenance':'Estimated'}
+    validate(manifest, 'manifest')
+    write_json(output/'manifest.json',manifest)
     reconstructed = encoded.astype(float)*scale+low
     assert np.max(np.abs(reconstructed-resized)) <= scale*.501
     assert encoded.size == 1024*1024 and binary.stat().st_size == 2097152

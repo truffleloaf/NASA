@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "path": "/data/terrain/polar-1024-lroc.jpg",
+  "width": 1024,
+  "height": 1024,
+  "sha256": "a130ae83fc49182ef22858600683c699e80bc451c41cb700ad8c0be28b9fa985",
+  "grid": "Same pixel grid as terrain/polar-1024.bin: row 0 is +Y (0 E), columns increase toward +X (90 E).",
+  "source": {
+    "name": "NASA/GSFC/ASU LROC WAC south-pole summer mosaic, WAC_ROI_SOUTH_SUMMER_128P",
+    "url": "https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/BROWSE/WAC_ROI/WAC_ROI_SOUTH_SUMMER/WAC_ROI_SOUTH_SUMMER_128P.TIF",
+    "sha256": "cb04d5b913ea496cfd66cc2b78c96bdae1eef99d90eb8ccb876ff09a82dd2348",
+    "nativePixelsPerDegree": 128,
+    "metersPerPixel": 236.901175,
+    "acquisition": "2010-09-21 through 2010-10-23 (southern summer, sub-solar latitude near 1.5 S)",
+    "sourceSize": [
+      12151,
+      12151
+    ],
+    "cropPixels": 2566,
+    "georeferencing": "GeoTIFF GeoKeys: polar stereographic, natural origin 90 S / 0 E, R = 1,737,400 m, north-up tiepoint at (-1,439,293 m, +1,439,293 m)."
+  },
+  "processing": "Centre 608 km square cropped, autocontrast (1% cutoff), Lanczos resample to 1024 x 1024, JPEG quality 88.",
+  "orientation": {
+    "rotationDegrees": 0,
+    "mirrored": false,
+    "basis": "GeoTIFF georeferencing matches the terrain grid; no rotation or mirror applied."
+  },
+  "alignmentReport": null,
+  "credit": "NASA/GSFC/Arizona State University, LROC WAC south-pole summer mosaic; Speyerer et al. (2020), Lunar Surface Science Workshop abstract 5132.",
+  "license": "NASA/GSFC/ASU LROC imagery; free to use with credit. Not a NASA endorsement of this project.",
+  "provenance": "Provided",
+  "limitations": [
+    "Imagery is context only: it is not used for any direction, elevation, horizon or window calculation.",
+    "Illumination is fixed to the 2010 southern summer mosaic; shadows baked into the image are not the simulated date.",
+    "The mosaic is 236.901 m/px and was resampled to 593.75 m/px display pixels, so fine surface detail is not resolved.",
+    "Grayscale 643 nm WAC band; values are display-stretched, not calibrated reflectance.",
+    "Mosaic seams and exposure differences between the contributing WAC frames remain."
+  ]
+}
