@@ -9,7 +9,9 @@ on:
       - "docs/DATA.md"
       - ".github/workflows/backend-data-check.yml"
   push:
-    branches: [main]
+    branches:
+      - main
+      - "backend/**"
     paths:
       - "public/data/**"
       - "backend/**"

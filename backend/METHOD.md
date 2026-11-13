@@ -224,7 +224,7 @@ still how the backend reports its own validation numbers.
 Operating windows are **not** computed by the backend, and the current frontend no longer
 reads the old `visibility` intervals. The shipped browser code (`lib/science.ts`) evaluates
 each hourly sample against the 2 m/20 m skyline profiles and derives windows in the browser;
-the old `windows.py` mirrors the deleted `lib/mission.ts` and is legacy. The rule is otherwise
+the old `windows.py`/`scan_windows.py` were removed with the deleted `lib/mission.ts`. The rule is otherwise
 the same: within one continuous sunlit interval, merge Earth-visible pieces whose separation
 is at most the allowed communication blackout, and keep the merged span if it is at least
 `max(min_sunlight, required_duration)`.

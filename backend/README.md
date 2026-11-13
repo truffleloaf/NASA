@@ -31,7 +31,7 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | --- | --- | --- |
 | Ephemeris (Sun / Earth az-el) | **done** | JPL Horizons, topocentric on the Moon, cached to `data/horizons/` |
 | Interval analysis | **done** | runs, coverage, longest gap, edge truncation |
-| Operating-window matching | **moved** | now owned by the frontend's `lib/science.ts`; `windows.py` is legacy |
+| Operating-window matching | **moved** | now owned by the frontend's `lib/science.ts`; the old `windows.py`/`scan_windows.py` were removed |
 | Geometric visibility (no terrain) | **done** | baseline with no terrain |
 | DEM acquisition | **done** | LOLA `LDEM_85S_40M`, 115 MB, byte count verified |
 | DEM projection (lat/lon <-> pixel) | **done** | matches PDS `dsmap_polar.cat`; corners land at −82.936° |
@@ -55,14 +55,12 @@ backend/
 │  ├─ horizon.py              vectorised terrain horizon + occlusion (Phase 1)
 │  ├─ horizons.py             JPL Horizons topocentric az/el + disk cache
 │  ├─ intervals.py            boolean runs, coverage, longest gap, edge truncation
-│  ├─ windows.py              LEGACY operating-window rules (old lib/mission.ts)
 │  ├─ fetch_dem.py            download LOLA polar DEM (resumable)
 │  ├─ run_horizon.py          horizon profile for the candidate sites + self-checks
 │  ├─ run_annual.py           full-year visibility, clamped and unclamped (Phase 2)
 │  ├─ cross_product.py        shipped 80 m vs independent 40 m terrain table
 │  ├─ check_convergence.py    ray step and ray range sensitivity (unclamped skyline)
 │  ├─ demo_geometric.py       three-site Sun/Earth comparison, no terrain
-│  ├─ scan_windows.py         which 7-day periods actually contain windows
 │  └─ check_frontend_tests.py run the frontend's npm test/typecheck/build
 └─ data/                      generated, not committed (see data/README.md)
 ```
@@ -106,12 +104,12 @@ Historical/auxiliary commands (they do **not** write `public/data`):
 
 ```sh
 .venv/Scripts/python backend/pipeline/demo_geometric.py        # three-site Sun/Earth comparison, no terrain
-.venv/Scripts/python backend/pipeline/scan_windows.py          # which weeks contain windows (legacy rules)
 ```
 
-The old exporter (`export_data.py`), its checker (`check_export.py`) and the
-`backend/export/data/` product were removed. If `public/data` needs regeneration, run the
-root `scripts/` only; the backend has no writer for it.
+The old exporter (`export_data.py`), its checker (`check_export.py`), the old window
+scripts (`windows.py`, `scan_windows.py`) and the `backend/export/data/` product were
+removed. If `public/data` needs regeneration, run the root `scripts/` only; the backend has
+no writer for it.
 
 `run_annual.py` and the other ephemeris users read the cache in `data/horizons/`. If it is
 absent they fetch from JPL and write it, so the first run needs network and later runs do not.
