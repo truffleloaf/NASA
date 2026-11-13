@@ -1,9 +1,11 @@
 "use client";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import Galaxy from "./galaxy";
 import { Html } from "@react-three/drei";
 import {
   BufferAttribute,
+  ACESFilmicToneMapping,
   BufferGeometry,
   DoubleSide,
   Group,
@@ -18,6 +20,7 @@ import {
 } from "three";
 import type { Atmosphere } from "./use-atmosphere";
 import { MoonFallback } from "./moon-fallback";
+import { lunarPoint } from "@/lib/scene-geometry";
 class MoonBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -32,8 +35,10 @@ function MoonModel({
   onReady,
   onError,
   portal,
+  diving,
 }: {
   atmosphere: Atmosphere;
+  diving: boolean;
   onReady: () => void;
   onError: () => void;
   portal: RefObject<HTMLDivElement>;
@@ -44,7 +49,7 @@ function MoonModel({
     earth = useRef<Mesh>(null),
     pulse = useRef<Mesh>(null),
     material = useRef<MeshStandardMaterial>(null);
-  const { gl, camera, size, invalidate } = useThree();
+  const { gl, camera, size, viewport, invalidate } = useThree();
   const elapsed = useRef(0),
     ready = useRef(false);
   useEffect(() => {
@@ -57,7 +62,7 @@ function MoonModel({
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(6), 3));
     return new Line(
       geometry,
-      new LineBasicMaterial({ color: "#62B6FF", transparent: true, opacity: 0, depthTest: false }),
+      new LineBasicMaterial({ color: "#5CC8FF", transparent: true, opacity: 0, depthTest: false }),
     );
   }, []);
   const pole = useMemo(() => new Vector3(), []),
@@ -84,13 +89,14 @@ function MoonModel({
     const failed = () => {
       if (!cancelled) onError();
     };
-    const map = loader.load("/moon-color.jpg", done, undefined, failed),
-      bump = loader.load("/moon-height.jpg", done, undefined, failed);
+    const map = loader.load(atmosphere.mobile ? "/moon-color.jpg" : "/moon-color-4k.webp", done, undefined, failed),
+      bump = loader.load("/moon-relief.webp", done, undefined, failed);
     map.colorSpace = SRGBColorSpace;
     map.anisotropy = bump.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
     if (material.current) {
       material.current.map = map;
       material.current.bumpMap = bump;
+      material.current.displacementMap = bump;
       material.current.needsUpdate = true;
     }
     return () => {
@@ -98,19 +104,14 @@ function MoonModel({
       map.dispose();
       bump.dispose();
     };
-  }, [gl, invalidate, onReady, onError]);
-  useEffect(() => {
-    if ("zoom" in camera) {
-      camera.zoom = size.width / 3.08;
-      camera.updateProjectionMatrix();
-    }
-    invalidate();
-  }, [camera, size.width, invalidate]);
+  }, [gl, invalidate, onReady, onError, atmosphere.mobile]);
   useFrame((_, delta) => {
     if (!group.current || !sphere.current || !marker.current || !earth.current || !pulse.current) return;
+    camera.position.z += ((diving ? 2.8 : 6) - camera.position.z) * .085;
+    camera.position.x += ((diving ? viewport.width * .26 : 0) - camera.position.x) * .085;
     const moving = atmosphere.active && !atmosphere.reduced;
     if (moving && ready.current) elapsed.current += Math.min(delta, 0.05);
-    sphere.current.rotation.y = atmosphere.reduced ? 0 : elapsed.current * 0.02;
+    sphere.current.rotation.y = -Math.PI / 2 + (atmosphere.reduced ? 0 : elapsed.current * 0.012);
     group.current.rotation.x +=
       ((atmosphere.reduced ? 0 : atmosphere.pointer.current.y * 0.02618) - group.current.rotation.x) *
       (atmosphere.reduced ? 1 : 0.05);
@@ -137,16 +138,18 @@ function MoonModel({
   });
   return (
     <>
-      <ambientLight intensity={0.04} />
-      <hemisphereLight args={["#DDE3EE", "#05060A", 0.03]} />
-      <directionalLight position={[-3, 2.5, 1.5]} intensity={3} />
-      <group ref={group}>
+      <ambientLight intensity={0.012} />
+      <hemisphereLight args={["#DDE3EE", "#05060A", 0.018]} />
+      <directionalLight position={[-3, 2, 1.2]} intensity={2.5} />
+      <group ref={group} position={[viewport.width * (atmosphere.mobile ? .11 : .26), viewport.height * (atmosphere.mobile ? -.12 : .04), 0]} scale={atmosphere.mobile ? viewport.width * .68 : viewport.height * .46}>
         <group rotation-x={-0.9}>
           <mesh ref={sphere}>
-            <sphereGeometry args={[1, 96, 96]} />
+            <sphereGeometry args={[1, 192, 128]} />
             <meshStandardMaterial
               ref={material}
-              bumpScale={0.6}
+              bumpScale={0.025}
+              displacementScale={0.012}
+              displacementBias={-0.006}
               roughness={1}
               onBeforeCompile={(shader) => {
                 shader.fragmentShader = shader.fragmentShader.replace(
@@ -156,9 +159,9 @@ function MoonModel({
               }}
             />
           </mesh>
-          <mesh ref={marker} position={[0, -1.003, 0]} rotation-x={Math.PI / 2}>
+          <mesh ref={marker} position={lunarPoint(-89.9, 0, 1.008)} rotation-x={Math.PI / 2}>
             <ringGeometry args={[0.017, 0.022, 32]} />
-            <meshBasicMaterial color="#5FD8A4" side={DoubleSide} depthTest={false} />
+            <meshBasicMaterial color="#4FE0B0" side={DoubleSide} depthTest={false} />
           </mesh>
           <Html
             portal={portal}
@@ -174,14 +177,14 @@ function MoonModel({
           </Html>
           <mesh ref={pulse} position={[0, -1.006, 0]} rotation-x={Math.PI / 2}>
             <ringGeometry args={[0.024, 0.027, 32]} />
-            <meshBasicMaterial color="#5FD8A4" side={DoubleSide} transparent opacity={0} depthTest={false} />
+            <meshBasicMaterial color="#4FE0B0" side={DoubleSide} transparent opacity={0} depthTest={false} />
           </mesh>
         </group>
       </group>
       <primitive object={line} />
       <mesh ref={earth} position={[atmosphere.mobile ? 0.36 : 0.9, atmosphere.mobile ? 1.15 : 0.95, 0]}>
         <circleGeometry args={[(9 * 3.08) / size.width, 32]} />
-        <meshBasicMaterial color="#62B6FF" />
+        <meshBasicMaterial color="#5CC8FF" />
         <Html portal={portal} center position={[0, 0.09, 0]} style={{ pointerEvents: "none" }}>
           <span className="hero-body-label tone-earth" aria-hidden="true">
             EARTH
@@ -190,7 +193,7 @@ function MoonModel({
       </mesh>
       <mesh position={[-1.07, 0.96, 0]}>
         <circleGeometry args={[0.013, 20]} />
-        <meshBasicMaterial color="#F4B860" />
+        <meshBasicMaterial color="#FFC46B" />
         <Html portal={portal} center position={[0, 0.08, 0]} style={{ pointerEvents: "none" }}>
           <span className="hero-body-label tone-sun" aria-hidden="true">
             SUN
@@ -200,7 +203,7 @@ function MoonModel({
     </>
   );
 }
-function MoonCanvas({ atmosphere }: { atmosphere: Atmosphere }) {
+function MoonCanvas({ atmosphere, diving }: { atmosphere: Atmosphere; diving: boolean }) {
   const portal = useRef<HTMLDivElement>(null!);
   const [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false);
@@ -211,26 +214,28 @@ function MoonCanvas({ atmosphere }: { atmosphere: Atmosphere }) {
       {!ready && <MoonFallback />}
       <div ref={portal} className="hero-moon-canvas" data-ready={ready} aria-hidden="true">
         <Canvas
-          orthographic
           gl={{ alpha: true, antialias: true }}
           dpr={[1, atmosphere.mobile ? 1.5 : 2]}
-          camera={{ position: [0, 0, 6], near: 0.1, far: 20 }}
+          camera={{ position: [0, 0, 6], fov:40, near: 0.1, far: 80 }}
           frameloop={atmosphere.active && !atmosphere.reduced ? "always" : "demand"}
           onCreated={({ gl }) => {
             gl.setClearColor(0, 0);
+            gl.toneMapping = ACESFilmicToneMapping;
+            gl.toneMappingExposure = 0.9;
           }}
           fallback={<MoonFallback />}
         >
-          <MoonModel atmosphere={atmosphere} portal={portal} onReady={callbacks.ready} onError={callbacks.error} />
+          <Galaxy atmosphere={atmosphere} />
+          <MoonModel diving={diving} atmosphere={atmosphere} portal={portal} onReady={callbacks.ready} onError={callbacks.error} />
         </Canvas>
       </div>
     </>
   );
 }
-export default function MoonHero({ atmosphere }: { atmosphere: Atmosphere }) {
+export default function MoonHero({ atmosphere, diving }: { atmosphere: Atmosphere; diving: boolean }) {
   return (
     <MoonBoundary>
-      <MoonCanvas atmosphere={atmosphere} />
+      <MoonCanvas atmosphere={atmosphere} diving={diving} />
     </MoonBoundary>
   );
 }

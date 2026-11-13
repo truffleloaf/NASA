@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { ArrowRight, Earth, Sun } from "lucide-react";
 import { ProvenanceBadge } from "../ui/provenance-badge";
-import Galaxy from "./galaxy";
 import { useAtmosphere } from "./use-atmosphere";
 import { MoonFallback as StaticMoon } from "./moon-fallback";
 const MoonHero = dynamic(() => import("./moon-hero"), { ssr: false, loading: () => <StaticMoon /> });
@@ -13,9 +12,13 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
   const host = useRef<HTMLElement>(null),
     atmosphere = useAtmosphere(host),
     reduced = useReducedMotion();
-  const [loadMoon, setLoadMoon] = useState(false);
+  const [loadMoon, setLoadMoon] = useState(false), [diving, setDiving] = useState(false);
+  const { scrollYProgress } = useScroll({ target: host, offset: ["start start", "end start"] });
+  const drift = useTransform(scrollYProgress, [0, 1], [0, 48]);
+  useEffect(() => { if (!diving) return; const timer = setTimeout(onExplore, 800); return () => clearTimeout(timer); }, [diving, onExplore]);
+  const explore = () => reduced || !loadMoon || atmosphere.saveData ? onExplore() : setDiving(true);
   useEffect(() => {
-    if (atmosphere.saveData || !atmosphere.active || loadMoon) return;
+    if (atmosphere.reduced || atmosphere.saveData || !atmosphere.active || loadMoon) return;
     let idle = 0;
     const timer = setTimeout(() => {
       if ("requestIdleCallback" in window)
@@ -26,7 +29,7 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
       clearTimeout(timer);
       if (idle) window.cancelIdleCallback(idle);
     };
-  }, [atmosphere.active, atmosphere.saveData, loadMoon]);
+  }, [atmosphere.active, atmosphere.saveData, atmosphere.reduced, loadMoon]);
   return (
     <section ref={host} className="landing-hero" data-atmosphere-running={atmosphere.active && !atmosphere.reduced}>
       <motion.div
@@ -35,14 +38,14 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
         animate={{ opacity: 1 }}
         transition={{ duration: reduced ? 0 : 0.6, ease }}
       >
-        <Galaxy host={host} atmosphere={atmosphere} />
+        <div className="galaxy-fallback" aria-hidden="true" />
       </motion.div>
       <div className="hero-copy">
         <span className="mono-caps">
-          <i className="status-dot" />A clearer view of the lunar south pole
+          <i className="status-dot" />Mission planning, illuminated.
         </span>
         <h1>
-          {["Find the hours", "when the Moon", "lets you work."].map((line, i) => (
+          {["Find your", "window on", "the Moon."].map((line, i) => (
             <motion.span
               className="hero-headline-line"
               key={line}
@@ -55,12 +58,11 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
           ))}
         </h1>
         <p>
-          Sunlight for power. Earth in sight for connection.
-          <br className="desktop-only" /> Discover where both align, and plan around the terrain.
+          Explore where sunlight and Earth visibility overlap.
         </p>
         <div className="button-row">
-          <button className="action-primary" onClick={onExplore}>
-            Open the explorer
+          <button className="action-primary" onClick={explore} disabled={diving}>
+            {diving ? "Approaching the south pole…" : "Open the explorer"}
             <ArrowRight />
           </button>
           <button className="action-outline" onClick={onCompare}>
@@ -72,7 +74,7 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
             kind="Estimated"
             detail="JPL DE441 directions and LRO LOLA elevations are Computed; terrain horizons, visibility and windows are Estimated."
           />
-          <span>Real source data. Explicit uncertainty.</span>
+          <span>NASA data. Transparent estimates.</span>
         </div>
       </div>
       <div
@@ -82,12 +84,13 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
       >
         <motion.div
           className="hero-moon-frame"
+          style={{ y: reduced ? 0 : drift }}
           aria-hidden="true"
           initial={reduced ? false : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 0.12, ease }}
         >
-          {loadMoon && !atmosphere.saveData ? <MoonHero atmosphere={atmosphere} /> : <StaticMoon />}
+          {loadMoon && !atmosphere.saveData && !atmosphere.reduced ? <MoonHero atmosphere={atmosphere} diving={diving} /> : <StaticMoon />}
         </motion.div>
       </div>
       <motion.div
@@ -96,16 +99,15 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 0.36, ease }}
       >
-        <span className="mono-caps">The right place. The right time.</span>
+        <span className="mono-caps">Two conditions. One window.</span>
         <p>
           <Sun />
-          Sun above the terrain
+          Sunlight for power
         </p>
         <p>
           <Earth />
-          Earth above the horizon
+          Earth in sight for connection
         </p>
-        <span className="small muted">Choose a site to calculate a window.</span>
         <ProvenanceBadge
           kind="Illustrative"
           detail="Decorative Moon, Sun and Earth composition; use the explorer for computed terrain and estimated visibility."
