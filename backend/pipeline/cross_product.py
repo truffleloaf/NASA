@@ -73,9 +73,9 @@ EXPECTED = {
 # Values printed in docs/DATA.md.  Kept separately so this script can report
 # which cells the documented method does not reproduce instead of hiding them.
 DOCUMENTED = {
-    "shackleton": dict(complete=360, p95=0.01, annual_40=23.7),
-    "malapert": dict(complete=205, p95=0.12, annual_40=39.8),
-    "de-gerlache": dict(complete=256, p95=0.44, annual_40=30.1),
+    "shackleton": dict(complete=360, p95=0.26, annual_40=23.8),
+    "malapert": dict(complete=205, p95=0.10, annual_40=39.9),
+    "de-gerlache": dict(complete=256, p95=0.45, annual_40=29.0),
 }
 
 
