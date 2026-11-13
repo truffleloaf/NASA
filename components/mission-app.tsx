@@ -11,16 +11,24 @@ const AppShell = dynamic(() => import("./mission/app-shell"), {
 export default function MissionApp() {
   const [view, setView] = useState("landing");
   useEffect(() => {
-    const requested = new URLSearchParams(location.search).get("view");
-    if (location.hash || requested) setView(requested || "explorer");
+    const restore = () => {
+      const requested = new URLSearchParams(location.search).get("view");
+      setView(requested || (location.hash && location.hash !== "#main" ? "explorer" : "landing"));
+    };
+    restore();
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
   }, []);
+  const navigate = (next: string) => {
+    history.pushState(null, "", next === "landing" ? "/" : `/?view=${next}${location.hash}`);
+    setView(next);
+  };
   if (view !== "landing")
     return (
       <AppShell
         initialView={view}
         onHome={() => {
-          history.replaceState(null, "", "/");
-          setView("landing");
+          navigate("landing");
         }}
       />
     );
@@ -33,7 +41,7 @@ export default function MissionApp() {
         <a className="brand" href="/" aria-label="Lunar Mission Navigator home">
           <Orbit />
           <span>
-            LUNAR<span className="brand-sub">MISSION NAVIGATOR</span>
+            LUNAR{" "}<span className="brand-sub">MISSION NAVIGATOR</span>
           </span>
         </a>
         <nav aria-label="Introduction">
@@ -41,14 +49,14 @@ export default function MissionApp() {
             Methods & data
             <ArrowUpRight />
           </a>
-          <button className="action-outline" onClick={() => setView("explorer")}>
+          <button className="action-outline" onClick={() => navigate("explorer")}>
             Open explorer
             <ArrowRight />
           </button>
         </nav>
       </header>
       <main id="main">
-        <LandingHero onExplore={() => setView("explorer")} onCompare={() => setView("compare")} />
+        <LandingHero onExplore={() => navigate("explorer")} onCompare={() => navigate("compare")} />
         <section className="landing-stats" aria-label="Data coverage">
           <StatTile
             label="Candidate regions"

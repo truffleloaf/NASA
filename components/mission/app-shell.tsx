@@ -5,6 +5,8 @@ import { Orbit, FileDown, Link as LinkIcon, SlidersHorizontal, ArrowRight, HelpC
 import { useMission, SITES } from "./use-mission";
 import { SetupPanel } from "./setup-panel";
 import { MapPanel } from "./map-panel";
+import { ConditionsPanel } from "./conditions-panel";
+import { PlanningHelp } from "./planning-help";
 import { TimePanel } from "./time-panel";
 import { InsightsPanel } from "./insights-panel";
 import { CompareView } from "./compare-view";
@@ -17,8 +19,8 @@ import { Card } from "../ui/card";
 import { Chip } from "../ui/chip";
 import { ProvenanceBadge } from "../ui/provenance-badge";
 export default function AppShell({ initialView, onHome }: { initialView: string; onHome: () => void }) {
-  const m = useMission(),
-    [view, setView] = useState(["compare", "windows", "brief"].includes(initialView) ? initialView : "explorer");
+  const [view, setView] = useState(["compare", "windows", "brief"].includes(initialView) ? initialView : "explorer");
+  const m = useMission(view);
   const [limits, setLimits] = useState(false),
     [tour, setTour] = useState(-1);
   useEffect(() => {
@@ -32,8 +34,13 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
     setView(next);
     const url = new URL(location.href);
     url.searchParams.set("view", next);
-    history.replaceState(null, "", url);
+    history.pushState(null, "", url);
   };
+  useEffect(() => {
+    const restore = () => setView(new URLSearchParams(location.search).get("view") || "explorer");
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
+  }, []);
   const closeTour = () => {
     setTour(-1);
     try {
@@ -74,7 +81,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
         <button className="brand" onClick={onHome} aria-label="Lunar Mission Navigator home">
           <Orbit />
           <span>
-            LUNAR<span className="brand-sub">MISSION NAVIGATOR</span>
+            LUNAR{" "}<span className="brand-sub">MISSION NAVIGATOR</span>
           </span>
         </button>
         <Segmented
@@ -92,10 +99,10 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
             kind="Estimated"
             detail="JPL directions and DEM values are Computed; terrain horizons and every visibility, uptime or window number are Estimated."
           />
-          <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
+          {m.expert && <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
             <LinkIcon />
-          </button>
-          <button className="action-outline" onClick={() => changeView("brief")}>
+          </button>}
+          <button className="action-outline" aria-label="Export brief" onClick={() => changeView("brief")}>
             <FileDown />
             <span>Export brief</span>
           </button>
@@ -104,10 +111,11 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
       <main id="main" tabIndex={-1}>
         <div className="workspace-topline">
           <div>
-            <span className="mono-caps">Lunar south pole / mission planning</span>
-            <p>Understand the overlap. Plan for the limits.</p>
+            <span className="mono-caps">Mission workspace</span>
+            <p>Choose a place. Find the overlap.</p>
           </div>
           <div className="button-row">
+            <Segmented label="Detail level" value={m.expert ? "expert" : "guided"} options={[{value:"guided",label:"Guided"},{value:"expert",label:"Expert"}]} onChange={v=>m.setExpert(v==="expert")} />
             <button className="action-outline setup-trigger" onClick={() => setLimits(true)}>
               <SlidersHorizontal />
               Mission setup
@@ -154,8 +162,10 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
                   <div className="center-column">
                     <MapPanel mission={m} />
                     <TimePanel mission={m} />
+                    <ConditionsPanel mission={m} />
+                    <PlanningHelp expert={m.expert} site={m.config.site} />
                   </div>
-                  <InsightsPanel mission={m} />
+                  <InsightsPanel mission={m} onCompare={() => changeView("compare")} />
                 </div>
               </>
             ) : view === "compare" ? (
@@ -208,7 +218,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
         description="A short introduction to Lunar Mission Navigator."
       >
         <p className="tour-copy">{steps[tour]?.text}</p>
-        <div className="tour-dots" aria-label={`Introduction step ${tour + 1} of ${steps.length}`}>
+        <div className="tour-dots" role="group" aria-label={`Introduction step ${tour + 1} of ${steps.length}`}>
           {steps.map((_, i) => (
             <i key={i} className={i === tour ? "active" : ""} />
           ))}

@@ -6,7 +6,9 @@ export function Track({
   hour,
   accent,
   onSelect,
+  selected,
 }: {
+  selected?: Interval;
   label: string;
   intervals: Interval[];
   total: number;
@@ -21,9 +23,12 @@ export function Track({
         {label}
       </span>
       <div className="track-rail">
+        {selected && <i className="selected-window-band" aria-hidden="true" style={{left:`${selected.start/total*100}%`,width:`${(selected.end-selected.start)/total*100}%`}} />}
         {intervals.map((v, i) => (
           <button
             type="button"
+            aria-pressed={selected?.start === v.start}
+            className={selected?.start === v.start ? "selected-window" : ""}
             key={`${v.start}:${v.end}`}
             style={{
               left: `${(v.start / (total || 1)) * 100}%`,
@@ -31,16 +36,17 @@ export function Track({
             }}
             onClick={() => onSelect(v)}
             aria-label={`${label}, ${v.start} to ${v.end} hours after period start, ${v.end - v.start} hours, estimated`}
-            title={`${v.end - v.start} hours · Estimated`}
+            data-caption={`Hour ${v.start} → ${v.end} · ${v.end - v.start} h · Estimated`}
+            title={`Hour ${v.start} → ${v.end} · ${v.end - v.start} hours · Estimated`}
           >
             <span />
           </button>
         ))}
-        <span
+        {hour >= 0 && <span
           className="track-cursor"
-          style={{ transform: `translateX(${(hour / (total || 1)) * 100}%)` }}
+          style={{ left: `${(hour / (total || 1)) * 100}%` }}
           aria-hidden="true"
-        />
+        />}
       </div>
     </div>
   );

@@ -21,10 +21,10 @@ export function PolarFallback({ mission: m }: { mission: MissionState }) {
           clipPath="url(#polar-disc)"
         />
         {[50, 100, 150, 200].map((r) => (
-          <circle key={r} cx="300" cy="230" r={r} fill="none" stroke="#9AA3B2" opacity=".25" />
+          <circle key={r} cx="300" cy="230" r={r} fill="none" stroke="#8C97A8" opacity=".25" />
         ))}
         {[0, 45, 90, 135].map((a) => (
-          <path key={a} d="M100 230H500" stroke="#9AA3B2" opacity=".25" transform={`rotate(${a} 300 230)`} />
+          <path key={a} d="M100 230H500" stroke="#8C97A8" opacity=".25" transform={`rotate(${a} 300 230)`} />
         ))}
         {SITES.map((s) => {
           const r = (90 + s.lat) * 20,
@@ -38,16 +38,16 @@ export function PolarFallback({ mission: m }: { mission: MissionState }) {
                 cy={y}
                 r={s.id === m.config.site ? 7 : 4}
                 fill="none"
-                stroke={s.id === m.config.site ? "#5FD8A4" : "#ECE9E3"}
+                stroke={s.id === m.config.site ? "#4FE0B0" : "#F2F4F8"}
                 strokeWidth="2"
               />
-              <text x={x + 12} y={y + (s.id === "shackleton" ? 18 : -8)} fill="#ECE9E3" fontSize="12">
+              <text x={x + 12} y={y + (s.id === "shackleton" ? 18 : -8)} fill="#F2F4F8" fontSize="12">
                 {s.name}
               </text>
             </g>
           );
         })}
-        <text x="300" y="20" textAnchor="middle" fill="#9AA3B2" fontSize="11">
+        <text x="300" y="20" textAnchor="middle" fill="#8C97A8" fontSize="11">
           0° E
         </text>
       </svg>
