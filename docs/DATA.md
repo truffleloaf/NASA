@@ -40,6 +40,20 @@ This validates hourly interpolation consistency against finer samples from the *
 
 On the shipped assets, all 2,160 skyline angles reproduce within 0.01° (measured maximum 0.0000°), and the source file hash matches the one recorded in every asset.
 
+## Cross-product terrain check
+
+The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_85S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline on branch `backend/pipeline`. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site.
+
+| site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m | annual sunlight, 40 m |
+| --- | --- | --- | --- | --- | --- | --- |
+| Shackleton | 360 / 360 | −0.02° / −0.01° | 0.01° | 0.45° | 23.7 % | 23.7 % |
+| Malapert | 205 / 360 | 0.00° / 0.00° | 0.12° | 0.19° | 39.8 % | 39.8 % |
+| de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.44° | 0.66° | 30.5 % | 30.1 % |
+
+Where the two products overlap, the skyline agrees to well under a degree and the annual illumination fraction to within 0.4 percentage points, despite a 2× difference in elevation sampling and separate code.
+
+Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And Malapert and de Gerlache are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray for those sites, leaving 43 % and 29 % of their sky unchecked.
+
 This is a drift guard, not a physical validation. It cannot detect a wrong-but-consistent pipeline: if the ray march were wrong in the same way on both sides, the comparison would still pass. Agreement means the shipped numbers can be rebuilt from published data, not that they are correct.
 
 ## Reproduce
