@@ -26,3 +26,11 @@ python backend/pipeline/cross_product.py \
 
 Both downloads are safe to re-run; the DEM download resumes from a partial file and Horizons
 responses are reused from cache when present.
+
+`backend/PROVENANCE.json` pins the byte count and SHA-256 of both DEM files. `fetch_dem.py`
+verifies them on every run, including cache hits, so a truncated or substituted cache fails
+loudly instead of silently changing the terrain.
+
+Horizons cache names include the observer altitude in kilometres, so 0 m, 2 m and 20 m
+queries cannot reuse each other's responses. Caches written before that change have no
+altitude in the name and are ignored; delete them or let them be refetched.
