@@ -103,7 +103,7 @@ Legacy commands, kept for historical comparison only:
 ```sh
 .venv/Scripts/python backend/pipeline/export_data.py           # old index.json/sites/*.json, not consumed
 .venv/Scripts/python backend/pipeline/check_export.py          # old lib/mission.ts contract
-.venv/Scripts/python backend/pipeline/demo_geometric.py        # two-site Sun/Earth comparison, no terrain
+.venv/Scripts/python backend/pipeline/demo_geometric.py        # three-site Sun/Earth comparison, no terrain
 .venv/Scripts/python backend/pipeline/scan_windows.py          # which weeks contain windows
 ```
 

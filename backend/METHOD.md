@@ -413,7 +413,7 @@ python backend/pipeline/run_annual.py       # full-year visibility + invariants
 python backend/pipeline/cross_product.py \
     --source backend/data/dem/ldem_85s_40m.img \
     --label  backend/data/dem/ldem_85s_40m.lbl --check
-python backend/pipeline/check_convergence.py# sampling and range sensitivity
+python backend/pipeline/check_convergence.py  # sampling and range sensitivity
 python backend/pipeline/check_frontend_tests.py  # npm test on the shipped assets
 ```
 

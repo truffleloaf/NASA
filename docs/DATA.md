@@ -44,13 +44,13 @@ On the shipped assets, all 2,160 skyline angles reproduce within 0.01° (measure
 
 The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_85S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline's legacy convention clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site.
 
-| site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m | annual sunlight, 40 m |
+| site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m (clamped) | annual sunlight, 40 m (clamped) |
 | --- | --- | --- | --- | --- | --- | --- |
 | Shackleton | 360 / 360 | −0.01° / −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
 | Malapert | 205 / 360 | 0.00° / 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
 | de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
 
-Where the two products overlap, the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code.
+Where the two products overlap, the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code. Both annual columns are the clamped convention; the app's unclamped 2 m numbers are 30.3 % / 44.7 % / 46.0 % and are not what this table measures.
 
 `backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-13 run is the source of the numbers above; the script's `--check` mode guards them.
 
