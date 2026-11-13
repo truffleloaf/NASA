@@ -322,12 +322,10 @@ of 150 km. The measured table is:
 | Malapert | 205/360 | 0.00° | 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
 | de Gerlache | 256/360 | 0.00° | 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
 
-The complete-azimuth counts and the median/max agreement reproduce the frontend's
-`docs/DATA.md` table. Two cells do not reproduce with the documented method: the doc lists
-Shackleton p95 0.01° (measured 0.26°) and de Gerlache 40 m annual sunlight 30.1 % (measured
-29.0 %). The script prints those differences instead of silently claiming a perfect match;
-regenerate the frontend table with this script or document the differing percentile/annual
-method before citing it.
+These are the values in the frontend's `docs/DATA.md` table; `cross_product.py --check`
+guards them. The table was regenerated on 2026-11-13 after two earlier cells (Shackleton
+p95 and de Gerlache 40 m annual sunlight) could not be reproduced with the documented
+method; the values above are the reproducible ones.
 
 The annual column here is the clamped convention, not the UI's 30.3 / 44.7 / 46.0 %. The
 point of the table is terrain-product agreement, not the app's headline numbers.
@@ -343,10 +341,10 @@ Full year 2026, one-hour ephemeris, 150 km rays, 40 m DEM.
 | Ephemeris accuracy | sub-arcsecond (DE441) | negligible |
 | Site position | ±1 pixel, 40 m | sub-arcsecond parallax |
 | DEM vertical accuracy | ~1 m | 0.001/`d` rad → < 0.02° beyond 3 km |
-| DEM horizontal sampling | 40 m | p95 ≤ 0.12° (Shackleton), ≤ 0.59° (Malapert) |
+| DEM horizontal sampling | 40 m vs 80 m | p95 0.11° (Shackleton), 0.62° (Malapert), 1.36° (de Gerlache) at the 80 m step, unclamped |
 | Ray range truncation | 150 km, DEM-limited | negligible: 50/150/250 km differ by 0.000° at the pole |
 | Disc vs point treatment | Sun 0.266°, Earth 0.951° | +2.3 to +3.6 pt (sun), +4.6 to +5.0 pt (Earth) |
-| Time quantisation | 10 min masks, 1 h ephemeris | ±10 min on interval boundaries |
+| Time quantisation | 1 h ephemeris; legacy 10 min masks | UI window boundaries ±1 h; backend intervals ±10 min |
 | Sphere vs ellipsoid | Moon flattening ≈ 1/581 | < 0.01° |
 
 **The DEM edge, in detail.** Shackleton never stops short of 148.5 km in any azimuth, so it is

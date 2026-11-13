@@ -46,13 +46,13 @@ The horizons are also compared against an independent terrain product and ray ma
 
 | site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m | annual sunlight, 40 m |
 | --- | --- | --- | --- | --- | --- | --- |
-| Shackleton | 360 / 360 | −0.02° / −0.01° | 0.01° | 0.45° | 23.7 % | 23.7 % |
-| Malapert | 205 / 360 | 0.00° / 0.00° | 0.12° | 0.19° | 39.8 % | 39.8 % |
-| de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.44° | 0.66° | 30.5 % | 30.1 % |
+| Shackleton | 360 / 360 | −0.01° / −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
+| Malapert | 205 / 360 | 0.00° / 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
+| de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
 
-Where the two products overlap, the skyline agrees to well under a degree and the annual illumination fraction to within 0.4 percentage points, despite a 2× difference in elevation sampling and separate code.
+Where the two products overlap, the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code.
 
-`backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. A 2026-11-13 run reproduces the complete-azimuth counts, medians, maxima and most annual fractions, but measures **Shackleton p95 0.26°** (table above: 0.01°) and **de Gerlache 40 m annual 29.0 %** (table above: 30.1 %). Those two cells were computed with a different percentile/annual method; the script prints the discrepancy instead of hiding it. Regenerate the table with the script or document the method difference before quoting those cells.
+`backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-13 run is the source of the numbers above; the script's `--check` mode guards them.
 
 Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And Malapert and de Gerlache are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray for those sites, leaving 43 % and 29 % of their sky unchecked.
 
