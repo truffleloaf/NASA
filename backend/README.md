@@ -33,7 +33,8 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | Interval analysis | **done** | runs, coverage, longest gap, edge truncation |
 | Operating-window matching | **moved** | now owned by the frontend's `lib/science.ts`; the old `windows.py`/`scan_windows.py` were removed |
 | Geometric visibility (no terrain) | **done** | baseline with no terrain |
-| DEM acquisition | **done** | LOLA `LDEM_85S_40M`, 115 MB, byte count verified |
+| DEM acquisition | **done** | LOLA `LDEM_85S_40M`, 115 MB, SHA-256 pinned in `PROVENANCE.json` |
+| Source provenance | **done** | `PROVENANCE.json` locks DEM sizes/hashes; `fetch_dem.py` verifies every run |
 | DEM projection (lat/lon <-> pixel) | **done** | matches PDS `dsmap_polar.cat`; corners land at −82.936° |
 | Terrain horizon profile | **done** | 1° azimuth bins, 150 km range, exact spherical curvature; clamped and unclamped values both exposed |
 | Terrain-aware occlusion | **done** | `elevation > max(terrain_horizon, 0)` for the legacy convention; unclamped used by the frontend |

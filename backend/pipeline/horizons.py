@@ -37,8 +37,11 @@ R_MOON_KM = 1737.4
 CACHE_DIR = Path(__file__).resolve().parents[1] / "data" / "horizons"
 
 
-def _cache_path(kind: str, body: str, site: str, start: str, stop: str, step: str) -> Path:
-    safe = f"{body}_{site}_{start[:10]}_{stop[:10]}_{step}".replace(" ", "").replace(":", "")
+def _cache_path(kind: str, body: str, site: str, start: str, stop: str, step: str,
+                alt_km: float) -> Path:
+    """缓存键包含观测高度：0 m、2 m、20 m 的查询不能互相命中。"""
+    safe = (f"{body}_{site}_{start[:10]}_{stop[:10]}_{step}_{alt_km:.4f}"
+            .replace(" ", "").replace(":", ""))
     return CACHE_DIR / f"{kind}_{safe}.txt"
 
 
@@ -98,9 +101,13 @@ def parse_samples(text: str) -> list[tuple[datetime, float, float]]:
 def fetch(body: str, site: str, lon: float, lat: float,
           start: str, stop: str, step: str = "10 m",
           alt_km: float = 0.0, refresh: bool = False) -> list[tuple[datetime, float, float]]:
-    """取一条方位角/高度角时间序列，带磁盘缓存（黑客松现场断网也能重跑）。"""
+    """取一条方位角/高度角时间序列，带磁盘缓存（黑客松现场断网也能重跑）。
+
+    缓存文件名含 `alt_km`，所以换了站点高程或观测高度会重新请求，而不是
+    静默复用旧响应。
+    """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache = _cache_path("azel", body, site, start, stop, step)
+    cache = _cache_path("azel", body, site, start, stop, step, alt_km)
 
     if cache.exists() and not refresh:
         text = cache.read_text(encoding="utf-8", errors="replace")
