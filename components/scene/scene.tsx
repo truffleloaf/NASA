@@ -10,6 +10,7 @@ import { SurfaceView } from "./SurfaceView";
 import { Skeleton } from "../ui/skeleton";
 import header from "@/public/data/terrain/polar-1024.json";
 import type { TerrainReading } from "@/lib/terrain";
+import { verifyBundledAsset } from "@/lib/verified-data";
 export type SceneProps = {
   onTerrain: (reading: TerrainReading | null) => void;
   mission: MissionState;
@@ -67,7 +68,8 @@ export default function Scene(props: SceneProps) {
         if (!r.ok) throw new Error("Terrain unavailable");
         return r.arrayBuffer();
       })
-      .then((buffer) => {
+      .then(async (buffer) => {
+        await verifyBundledAsset("/data/terrain/polar-1024.bin", buffer);
         if (buffer.byteLength !== header.width * header.height * 2) throw new Error("Invalid terrain dimensions");
         const view = new DataView(buffer);
         const data = new Uint16Array(header.width * header.height);

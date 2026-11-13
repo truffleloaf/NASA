@@ -3,6 +3,7 @@ import { ArrowLeft, Orbit } from "lucide-react";
 import validation from "@/public/data/validation.json";
 import { Card } from "@/components/ui/card";
 import { ProvenanceBadge } from "@/components/ui/provenance-badge";
+import { DataSources } from "@/components/mission/data-sources";
 export const metadata: Metadata = {
   title: "Methods & validation — Lunar Mission Navigator",
   description: "Sources, formulas, data resolution and honest limits of lunar operating-window estimates.",
@@ -39,13 +40,14 @@ export default function MethodsPage() {
         <Card>
           <h2>How to read the badges</h2>
           <p>
-            <ProvenanceBadge kind="Computed" /> A value read straight from the bundled datasets: site coordinates, Sun
+            <ProvenanceBadge kind="Computed" /> A value read straight from the bundled datasets: Sun
             and Earth directions and angular diameters from the JPL ephemeris, elevation samples from the LOLA DEM, and
             dataset dimensions. No modelling step sits between the file and the number.
           </p>
           <p>
             <ProvenanceBadge /> A value that needs a model between the data and the number: terrain horizons,
             interpolated samples, visibility percentages, window times, mast deltas, fit ranks and heatmap hours.
+            Representative site coordinates are planning references, not surveyed or NASA-approved landing pads.
           </p>
           <p>
             <ProvenanceBadge kind="Illustrative" /> A visual aid, such as the landing Moon, exaggerated relief or
@@ -79,6 +81,7 @@ export default function MethodsPage() {
             static assets.
           </p>
         </Card>
+        <DataSources />
         <Card>
           <h2>
             From elevations to windows <ProvenanceBadge />
@@ -107,7 +110,7 @@ export default function MethodsPage() {
             <li>
               Earth uptime is visible hourly samples divided by total samples. The mast delta compares against the 2 m
               baseline for the same period. Windows rank by duration, then uptime, then start time. “Duration covered”
-              is the available/requested duration ratio capped at 100%; it is not a safety score.
+              is the longest qualifying window divided by the selected planning period; it is not a safety score.
             </li>
             <li>
               The annual heatmap counts hours falling inside qualifying windows for each day, applying the current

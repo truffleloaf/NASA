@@ -163,7 +163,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
                     <MapPanel mission={m} />
                     <TimePanel mission={m} />
                     <ConditionsPanel mission={m} />
-                    <PlanningHelp expert={m.expert} />
+                    <PlanningHelp expert={m.expert} site={m.config.site} />
                   </div>
                   <InsightsPanel mission={m} onCompare={() => changeView("compare")} />
                 </div>

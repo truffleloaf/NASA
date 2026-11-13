@@ -15,6 +15,7 @@ import {
 } from "@/lib/science";
 import { encodeConfig, windowsCSV } from "@/lib/share";
 import { START_CONFIG, restoreSettings } from "@/lib/planning";
+import { verifyBundledAsset } from "@/lib/verified-data";
 export const SITES = manifest.sites as Site[];
 export type MissionState = ReturnType<typeof useMission>;
 export function useMission(view: string) {
@@ -80,7 +81,9 @@ export function useMission(view: string) {
           [site.ephemeris, site.horizon].map(async (path) => {
             const response = await fetch(path, { signal: controller.signal });
             if (!response.ok) throw new Error(`${site.name}: data asset unavailable`);
-            return response.json();
+            const bytes = await response.arrayBuffer();
+            await verifyBundledAsset(path, bytes);
+            return JSON.parse(new TextDecoder().decode(bytes));
           }),
         );
         const entry = { site, ephemeris, horizon } as SiteData;

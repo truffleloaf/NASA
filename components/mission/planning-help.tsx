@@ -1,5 +1,6 @@
 import { Card } from '../ui/card';
-export function PlanningHelp({expert}:{expert:boolean}) {
+import type { SiteId } from '@/lib/science';
+export function PlanningHelp({expert,site}:{expert:boolean;site:SiteId}) {
   return <Card className="planning-help">
     {!expert&&<details><summary>How to read the sky</summary><dl>
       <dt>Elevation</dt><dd>Angle above a level horizon. Nearby terrain can still block a positive elevation.</dd>
@@ -13,6 +14,6 @@ export function PlanningHelp({expert}:{expert:boolean}) {
       <li>No atmospheric refraction is applied on the airless Moon. Libration is handled by JPL directions.</li>
       <li>Mast interpolation assumes the same underlying terrain. Metre-scale clearance is not validated by this DEM.</li>
       <li>Earth visibility means geometric line of sight, not a guaranteed radio link or relay service.</li>
-    </ul><a className="text-link" href="/methods/">Methods and validation</a></details>
+    </ul><a className="text-link" href={`/methods/#source-${site}`}>NASA source data for this site</a></details>
   </Card>;
 }
