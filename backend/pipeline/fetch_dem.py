@@ -4,7 +4,8 @@
 选择理由：Shackleton(89.90°S) 和 Malapert(85.99°S) 都在范围内；
 40 m/像素 对"几公里内的地平线"足够（一个 1 km 的坑缘跨 25 个像素）。
 
-支持断点续传：网络断了重跑同一条命令即可。
+支持断点续传：网络断了重跑同一条命令即可。已经完整的文件直接跳过；
+若服务器对越界 Range 返回 416，也视为文件已完整（这正是 CI 缓存命中时的情形）。
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from __future__ import annotations
 import pathlib
 import sys
 import time
+import urllib.error
 import urllib.request
 
 BASE = ("https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/"
@@ -36,8 +38,18 @@ def download(name: str, expected: int | None = None) -> pathlib.Path:
     if partial:
         req.add_header("Range", f"bytes={partial}-")
 
+    try:
+        resp = urllib.request.urlopen(req, timeout=120)
+    except urllib.error.HTTPError as exc:
+        # 从 EOF 起的 Range 会被拒绝为 416；这说明本地文件已经完整。CI 缓存
+        # 恢复 backend/data/dem 后每个 job 都会走到这里。
+        if exc.code == 416 and partial:
+            print(f"[skip] {name} 已完整（{partial:,} 字节）")
+            return dest
+        raise
+
     t0 = time.time()
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with resp:
         total = expected or partial + int(resp.headers.get("Content-Length", 0))
         mode = "ab" if partial else "wb"
         done = partial
