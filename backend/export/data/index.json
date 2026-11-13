@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-11-11T15:02:31Z",
+  "manifest": {
+    "ephemeris": {
+      "source": "JPL Horizons, DE441",
+      "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
+      "center": "coord@301 (topocentric on the Moon)",
+      "quantity": "airless apparent azimuth/elevation of the body centre",
+      "corrections": [
+        "light-time",
+        "stellar aberration",
+        "gravitational deflection"
+      ],
+      "refraction": "none (no lunar atmosphere)"
+    },
+    "terrain": {
+      "source": "LRO LOLA LDEM_85S_40M (PDS Geosciences)",
+      "map_scale_m": 40,
+      "azimuth_bins": 360,
+      "max_range_km": 150.0,
+      "curvature": "exact spherical, R = 1737.4 km",
+      "projection": "polar stereographic, lon 0 up, +90E right"
+    },
+    "coverage": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc": "2027-01-01T00:00:00Z",
+      "series_step_minutes": 60,
+      "mask_step_minutes": 10
+    },
+    "conventions": {
+      "azimuth": "degrees, 0 = north, 90 = east",
+      "elevation": "degrees above the local horizontal plane",
+      "time": "UTC",
+      "visible": "body elevation > max(terrain horizon at that azimuth, 0)",
+      "solar_center": "sun centre above the terrain horizon",
+      "solar_limb": "sun upper limb above the terrain horizon (radius 0.266 deg)",
+      "earth_limb": "any part of Earth above the horizon (radius 0.951 deg)",
+      "units": {
+        "horizon_deg": "0.01 deg integers",
+        "series": "0.01 deg integers"
+      }
+    },
+    "limits": [
+      "DEM is 40 m/pixel; terrain detail below that is not represented",
+      "rays are traced to 150 km, the usable radius of this 85S-90S DEM; azimuths that leave the DEM earlier stop at the edge",
+      "1-hour ephemeris, interpolated to 10 minutes for visibility masks",
+      "geometric line of sight only; no radio-link budget",
+      "site positions are the product's fixed points, not re-optimised for illumination"
+    ]
+  },
+  "sites": [
+    {
+      "id": "shackleton",
+      "name": "Shackleton Crater Rim",
+      "lat_deg": -89.9,
+      "lon_deg": 0.0,
+      "elevation_m": 629.4,
+      "horizon_summary": {
+        "min_deg": 0.0,
+        "median_deg": 1.87,
+        "max_deg": 22.37,
+        "max_at_azimuth_deg": 140.5
+      },
+      "annual": {
+        "solar_fraction": 0.2369,
+        "solar_limb_fraction": 0.2731,
+        "earth_fraction": 0.4621,
+        "earth_limb_fraction": 0.5081,
+        "both_fraction": 0.165,
+        "longest_solar_h": 330.33,
+        "longest_both_h": 295.17,
+        "longest_earth_gap_h": 148.0
+      },
+      "file": "sites/shackleton.json"
+    },
+    {
+      "id": "malapert",
+      "name": "Malapert Massif",
+      "lat_deg": -85.99,
+      "lon_deg": 2.3,
+      "elevation_m": 5148.3,
+      "horizon_summary": {
+        "min_deg": 0.0,
+        "median_deg": 0.72,
+        "max_deg": 3.81,
+        "max_at_azimuth_deg": 282.5
+      },
+      "annual": {
+        "solar_fraction": 0.3658,
+        "solar_limb_fraction": 0.3886,
+        "earth_fraction": 0.5468,
+        "earth_limb_fraction": 0.5967,
+        "both_fraction": 0.2286,
+        "longest_solar_h": 347.0,
+        "longest_both_h": 327.83,
+        "longest_earth_gap_h": 169.5
+      },
+      "file": "sites/malapert.json"
+    }
+  ]
+}
