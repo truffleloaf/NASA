@@ -5,6 +5,7 @@ import { Layers, RotateCcw, Earth, Sun } from "lucide-react";
 import { coordinates } from "@/lib/planning";
 import type { TerrainReading } from "@/lib/terrain";
 import { SITES, type MissionState } from "./use-mission";
+import { ElevationSparkline } from "./conditions-panel";
 import { Card } from "../ui/card";
 import { Segmented } from "../ui/segmented";
 import { Skeleton } from "../ui/skeleton";
@@ -150,6 +151,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           <Sun />
           <span>
             Sun elevation<strong>{m.sample ? `${m.sample.sunEl.toFixed(2)}°` : "—"}</strong>
+            <ElevationSparkline mission={m} body="sun" />
             <small>{m.sample ? (m.sample.sun ? "Above terrain" : "Terrain-obstructed") : "Data unavailable"}</small>
           </span>
         </div>
@@ -157,6 +159,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           <Earth />
           <span>
             Earth elevation<strong>{m.sample ? `${m.sample.earthEl.toFixed(2)}°` : "—"}</strong>
+            <ElevationSparkline mission={m} body="earth" />
             <small>
               {m.sample ? (m.sample.earth ? "Line of sight visible" : "Terrain-obstructed") : "Data unavailable"}
             </small>
@@ -164,7 +167,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
         </div>
         <ProvenanceBadge detail="JPL directions are Computed; terrain clearance and visibility are Estimated." />
       </div>
-      <details className="map-data">
+      {m.expert && <details className="map-data">
         <summary>Position & horizon details</summary>
         <table>
           <caption>Current directions: Computed. Terrain horizon: Estimated.</caption>
@@ -198,7 +201,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
             )}
           </tbody>
         </table>
-      </details>
+      </details>}
     </Card>
   );
 }

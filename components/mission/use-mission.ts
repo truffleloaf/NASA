@@ -23,6 +23,7 @@ export function useMission(view: string) {
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
+  const [expert,setExpert] = useState(false);
   const [playing, setPlaying] = useState(false),
     [speed, setSpeed] = useState(24),
     [reduced, setReduced] = useState(false);
@@ -190,6 +191,7 @@ export function useMission(view: string) {
   };
   return {
     config,
+    expert, setExpert,
     update,
     seek,
     data,

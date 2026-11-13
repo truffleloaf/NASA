@@ -5,6 +5,8 @@ import { Orbit, FileDown, Link as LinkIcon, SlidersHorizontal, ArrowRight, HelpC
 import { useMission, SITES } from "./use-mission";
 import { SetupPanel } from "./setup-panel";
 import { MapPanel } from "./map-panel";
+import { ConditionsPanel } from "./conditions-panel";
+import { PlanningHelp } from "./planning-help";
 import { TimePanel } from "./time-panel";
 import { InsightsPanel } from "./insights-panel";
 import { CompareView } from "./compare-view";
@@ -97,9 +99,9 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
             kind="Estimated"
             detail="JPL directions and DEM values are Computed; terrain horizons and every visibility, uptime or window number are Estimated."
           />
-          <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
+          {m.expert && <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
             <LinkIcon />
-          </button>
+          </button>}
           <button className="action-outline" onClick={() => changeView("brief")}>
             <FileDown />
             <span>Export brief</span>
@@ -113,6 +115,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
             <p>Choose a place. Find the overlap.</p>
           </div>
           <div className="button-row">
+            <Segmented label="Detail level" value={m.expert ? "expert" : "guided"} options={[{value:"guided",label:"Guided"},{value:"expert",label:"Expert"}]} onChange={v=>m.setExpert(v==="expert")} />
             <button className="action-outline setup-trigger" onClick={() => setLimits(true)}>
               <SlidersHorizontal />
               Mission setup
@@ -159,6 +162,8 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
                   <div className="center-column">
                     <MapPanel mission={m} />
                     <TimePanel mission={m} />
+                    <ConditionsPanel mission={m} />
+                    <PlanningHelp expert={m.expert} />
                   </div>
                   <InsightsPanel mission={m} onCompare={() => changeView("compare")} />
                 </div>

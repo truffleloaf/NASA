@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useId } from "react";
 import { coordinates, dateError } from "@/lib/planning";
+import { CustomLocation } from "./custom-location";
 import { ArrowRight, SlidersHorizontal } from "lucide-react";
 import type { MissionState } from "./use-mission";
 import { SITES } from "./use-mission";
@@ -35,8 +36,16 @@ export function SetupPanel({ mission: m, onFind }: { mission: MissionState; onFi
         {coordinates(m.selected.lat, m.selected.lon)}{ " " }
         <ProvenanceBadge detail="Selected representative coordinates, not a certified landing site." />
       </p>
+      <CustomLocation mission={m} />
       <div className="form-divider" />
       <SectionLabel>Planning period · UTC</SectionLabel>
+      <label className="period-preset">Quick period<select aria-label="Planning period preset" defaultValue="custom" onChange={e=>{
+        if(e.target.value==='custom')return;
+        const start=e.target.value==='week'?new Date().toISOString().slice(0,10):m.config.start.slice(0,8)+'01';
+        const date=new Date(start+'T00:00:00Z');
+        if(e.target.value==='week')date.setUTCDate(date.getUTCDate()+6);else date.setUTCMonth(date.getUTCMonth()+1,0);
+        changeDate({start,end:date.toISOString().slice(0,10)});
+      }}><option value="week">Next 7 days</option><option value="month">Selected month</option><option value="custom">Custom dates</option></select></label>
       <div className="date-fields">
         <label>
           Start

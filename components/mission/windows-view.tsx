@@ -16,10 +16,10 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
             {m.selected.name} · {m.config.start} to {m.config.end} UTC <ProvenanceBadge />
           </p>
         </div>
-        <button className="action-outline" onClick={m.downloadCSV}>
+        {m.expert && <button className="action-outline" onClick={m.downloadCSV}>
           <Download />
           Download CSV
-        </button>
+        </button>}
       </div>
       <p className="muted">
         Ranked by duration, then Earth-link uptime. Sunlight stays continuous; communication gaps follow your blackout

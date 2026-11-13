@@ -40,11 +40,11 @@ export function Track({
             <span />
           </button>
         ))}
-        <span
+        {hour >= 0 && <span
           className="track-cursor"
           style={{ transform: `translateX(${(hour / (total || 1)) * 100}%)` }}
           aria-hidden="true"
-        />
+        />}
       </div>
     </div>
   );

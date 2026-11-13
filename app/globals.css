@@ -2623,3 +2623,26 @@ caption {
 .terrain-label.selected::before { content:""; position:absolute; inset:-4px; border:1px solid var(--ok); border-radius:12px; animation:site-ripple 2s ease-out infinite; pointer-events:none; }
 @keyframes site-ripple { from{opacity:.6;transform:scale(.97)} to{opacity:0;transform:scale(1.15)} }
 @media(prefers-reduced-motion:reduce){.terrain-label.selected::before {animation:none;opacity:0;}}
+.countdown-row { display:flex; flex-wrap:wrap; gap:12px; align-items:center; font-size:12px; }
+.power-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:16px; }
+.power-stats .stat-number { font-size:32px; }
+.elevation-spark { width:120px; height:36px; margin:4px 0; }
+.planning-help details+details { margin-top:16px; }
+.planning-help summary,.custom-location summary { min-height:44px; padding:12px 0; font-size:13px; }
+.planning-help dt { color:var(--text); margin-top:12px; }
+.planning-help dd { font-family:var(--font-body); margin:0; color:var(--text-muted); font-size:12px; }
+.planning-help li { font-size:12px; color:var(--text-muted); margin-bottom:8px; }
+.custom-result { display:grid; gap:12px; font-size:12px; }
+.custom-location form { display:grid; gap:8px; margin-bottom:12px; }
+.period-preset { display:grid; gap:8px; font-size:12px; color:var(--text-muted); }
+@media(max-width:767px) { .power-stats {gap:8px;} .power-stats .stat-number {font-size:24px;} .power-stats .provenance-badge {font-size:10px;} .workspace-topline .button-row {flex-wrap:wrap;} }
+.compare-pair { margin-bottom:24px; }
+.paired-tracks { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:24px 0 16px; }
+.paired-tracks section { min-width:0; }
+.compare-input { display:flex; align-items:center; gap:12px; min-height:88px; font-size:12px; }
+.paired-tracks .date-fields { min-height:88px; }
+.diff-summary { color:var(--ok); margin-bottom:8px; }
+.mini-terrain { height:104px; margin:16px -24px; position:relative; overflow:hidden; background:var(--bg); }
+.mini-terrain svg { width:100%; height:100%; }
+.mini-terrain span { position:absolute; bottom:8px; left:24px; font-size:12px; color:var(--text-muted); }
+@media(max-width:767px) { .paired-tracks {grid-template-columns:1fr;} .compare-pair>.row-between {align-items:flex-start;flex-direction:column;} }

@@ -1,6 +1,6 @@
 "use client";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
-import { formatTime } from "@/lib/science";
+import { formatTime, dateMs, HOUR } from "@/lib/science";
 import type { MissionState } from "./use-mission";
 import { Card } from "../ui/card";
 import { SectionLabel } from "../ui/section-label";
@@ -45,6 +45,7 @@ export function TimePanel({ mission: m }: { mission: MissionState }) {
           </label>
         </div>
         <time className="mono">{formatTime(m.config, m.config.hour)} UTC</time>
+        <span className="small muted" suppressHydrationWarning>Local: {new Date(dateMs(m.config.start)+m.config.hour*HOUR).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",timeZoneName:"short"})}</span>
       </div>
       <label className="sr-only" htmlFor="time-scrubber">
         Selected hour in planning period

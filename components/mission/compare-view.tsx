@@ -1,5 +1,6 @@
 "use client";
 import { coordinates } from "@/lib/planning";
+import { ComparePair } from "./compare-pair";
 import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { analyzeSite, type SiteId } from "@/lib/science";
@@ -39,12 +40,17 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
           <ProvenanceBadge detail="Mast benefits are exploratory estimates; the DEM cannot resolve metre-scale obstacles." />
         </div>
       </div>
+      <ComparePair mission={m} />
       <div className="comparison-grid">
         {ranking.map((site, i) => (
           <Card key={site.id} className={site.id === m.config.site ? "chosen-card" : ""}>
             <div className="row-between">
               <span className="mono-caps">Fit rank {i + 1}</span>
               <ProvenanceBadge />
+            </div>
+            <div className="mini-terrain" aria-label={`${site.name} estimated horizon preview`} role="img">
+              <svg viewBox="0 0 300 80" aria-hidden="true"><defs><linearGradient id={`preview-${site.id}`} x2="0" y2="1"><stop stopColor="#8C97A8"/><stop offset="1" stopColor="#121A26"/></linearGradient></defs><path fill={`url(#preview-${site.id})`} d={`M0 80 ${(m.data[site.id]?.horizon.profiles['2']??[]).map((v,j,arr)=>`L${j/(arr.length-1)*300} ${55-v*2}`).join(' ')} L300 80Z`}/></svg>
+              <span>Terrain horizon · Estimated</span>
             </div>
             <h2>{site.name}</h2>
             <p className="mono small muted">
@@ -67,9 +73,10 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
                 onExplore();
               }}
             >
-              Explore this region
+              Open region
               <ArrowRight />
             </button>
+            <button className="action-quiet full-width" onClick={()=>{m.update({site:site.id});document.querySelector('.compare-pair')?.scrollIntoView({behavior:m.reduced?'instant':'smooth',block:'center'});}}>Compare this region</button>
           </Card>
         ))}
       </div>
