@@ -12,7 +12,7 @@ const Scene = dynamic(() => import("../scene/scene"), {
   ssr: false,
   loading: () => <Skeleton className="scene-loading" label="Loading polar terrain" />,
 });
-export type LayersState = { shadows: boolean; heat: boolean; grid: boolean; cone: boolean; labels: boolean };
+export type LayersState = { shadows: boolean; imagery: boolean; heat: boolean; grid: boolean; cone: boolean; labels: boolean };
 export function MapPanel({ mission: m }: { mission: MissionState }) {
   const [mode, setMode] = useState("polar"),
     [flat, setFlat] = useState(false),
@@ -20,6 +20,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
     [exaggeration, setExaggeration] = useState(2);
   const [layers, setLayers] = useState<LayersState>({
     shadows: true,
+    imagery: true,
     heat: false,
     grid: true,
     cone: false,
@@ -61,10 +62,10 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           />
         )}
         <div className="map-corner">
-          <span className="mono-caps">LOLA / south-polar DEM</span>
+          <span className="mono-caps">LOLA DEM · LROC WAC</span>
           <ProvenanceBadge
             kind="Computed"
-            detail="Real terrain, downsampled for display. Sun shadows on this coarse mesh are illustrative of lighting, not the horizon-based window calculation."
+            detail="Real LOLA terrain and LROC WAC south-pole imagery, downsampled for display. The imagery has fixed 2010 summer lighting; scene shadows are computed for the selected date. Neither layer feeds the horizon or window calculation."
           />
         </div>
         <div className="map-tools">
@@ -76,6 +77,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
               <strong>Map layers</strong>
               {Object.entries({
                 shadows: "Terrain shadows",
+                imagery: "LROC imagery",
                 heat: "Illumination tint",
                 grid: "Graticule",
                 cone: "Earth sight line",

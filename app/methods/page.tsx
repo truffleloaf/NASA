@@ -63,6 +63,12 @@ export default function MethodsPage() {
               1,737.4 km. The display is downsampled to 1,024 × 1,024 pixels, approximately 594 m per pixel.
             </li>
             <li>
+              <a href="/data/terrain/polar-1024-lroc.json">LROC WAC south-pole summer mosaic</a> (NASA/GSFC/ASU,
+              WAC_ROI_SOUTH_SUMMER_128P, 236.9 m per pixel): context imagery only, resampled to the same 1,024 × 1,024
+              grid. Its illumination is fixed to the 2010 southern summer, so the baked shadows are not the simulated
+              date. The image is never used for a direction, horizon or window.
+            </li>
+            <li>
               <a href="https://ssd.jpl.nasa.gov/horizons/manual.html">NASA/JPL Horizons</a>: DE441 apparent airless
               topocentric Sun/Earth azimuth, elevation and angular diameter at hourly intervals throughout 2026. Each
               site includes 8,761 samples, including the following midnight endpoint.
@@ -121,7 +127,7 @@ export default function MethodsPage() {
             Reference crossing checks <ProvenanceBadge />
           </h2>
           <p>
-            Five reference points compare solar-centre zero-elevation crossings interpolated from hourly samples with
+            Each shipped site, plus two numerical reference points, compares solar-centre zero-elevation crossings interpolated from hourly samples with
             separately requested one-minute JPL Horizons samples. All times are UTC. These are same-source sampling
             checks with a flat astronomical horizon,{" "}
             <strong>not independent model validation or terrain sunrise/sunset predictions</strong>.

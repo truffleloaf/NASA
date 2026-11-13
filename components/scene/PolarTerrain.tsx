@@ -1,8 +1,18 @@
 "use client";
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { OrbitControls, Html, Line } from "@react-three/drei";
-import { BufferAttribute, BufferGeometry, Color, DoubleSide, InstancedMesh, Object3D, Vector3 } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  DoubleSide,
+  InstancedMesh,
+  Object3D,
+  SRGBColorSpace,
+  TextureLoader,
+  Vector3,
+} from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import header from "@/public/data/terrain/polar-1024.json";
 import { SITES } from "../mission/use-mission";
@@ -26,6 +36,12 @@ export function PolarTerrain({
   const { camera, invalidate } = useThree(),
     controls = useRef<Controls>(null),
     markers = useRef<InstancedMesh>(null);
+  const imagery = useLoader(TextureLoader, "/data/terrain/polar-1024-lroc.jpg");
+  useEffect(() => {
+    imagery.colorSpace = SRGBColorSpace;
+    imagery.anisotropy = 8;
+    imagery.needsUpdate = true;
+  }, [imagery]);
   const heightAt = (x: number, z: number) => {
     const col = Math.max(0, Math.min(1023, Math.round((x / (RADIUS * 2) + 0.5) * 1023))),
       row = Math.max(0, Math.min(1023, Math.round((z / (RADIUS * 2) + 0.5) * 1023)));
@@ -35,13 +51,15 @@ export function PolarTerrain({
     const size = 256,
       positions: number[] = [],
       colors: number[] = [],
+      uvs: number[] = [],
       indices: number[] = [];
     for (let row = 0; row <= size; row++)
       for (let col = 0; col <= size; col++) {
         const x = (col / size - 0.5) * RADIUS * 2,
           z = (row / size - 0.5) * RADIUS * 2;
         positions.push(x, heightAt(x, z), z);
-        const color = new Color(layers.heat ? "#F4B860" : "#999B9B");
+        uvs.push(col / size, 1 - row / size);
+        const color = new Color(layers.heat ? "#F4B860" : layers.imagery ? "#FFFFFF" : "#999B9B");
         colors.push(color.r, color.g, color.b);
       }
     for (let row = 0; row < size; row++)
@@ -55,10 +73,11 @@ export function PolarTerrain({
     const geo = new BufferGeometry();
     geo.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
     geo.setAttribute("color", new BufferAttribute(new Float32Array(colors), 3));
+    geo.setAttribute("uv", new BufferAttribute(new Float32Array(uvs), 2));
     geo.setIndex(indices);
     geo.computeVertexNormals();
     return geo;
-  }, [heights, exaggeration, layers.heat]);
+  }, [heights, exaggeration, layers.heat, layers.imagery]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const points = SITES.map((site) => {
       const [x, z] = sitePoint(site.lat, site.lon);
@@ -130,7 +149,13 @@ export function PolarTerrain({
         />
       )}
       <mesh geometry={geometry} receiveShadow castShadow>
-        <meshStandardMaterial vertexColors roughness={1} metalness={0} side={DoubleSide} />
+        <meshStandardMaterial
+          vertexColors
+          map={layers.imagery && !layers.heat ? imagery : null}
+          roughness={1}
+          metalness={0}
+          side={DoubleSide}
+        />
       </mesh>
       <instancedMesh
         ref={markers}
