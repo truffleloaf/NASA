@@ -10,11 +10,15 @@ Source SHA-256: `e6591eeea35402ca5e124ca00f5bf0774381a2d4fa919144b455d82b8ff65fd
 
 **Directions and apparent diameters — Computed by NASA/JPL Horizons.** [Horizons API](https://ssd-api.jpl.nasa.gov/doc/horizons.html) observer ephemerides use Sun target `10`, Earth target `399`, observer centre `coord@301`, geodetic east-positive coordinates, apparent airless azimuth/elevation, and angular diameter. The returned ephemeris source is DE441. Each bundled file preserves exact query URLs and raw-response SHA-256 hashes. See the [Horizons manual](https://ssd.jpl.nasa.gov/horizons/manual.html) for conventions and model limitations.
 
+**Surface imagery — Provided by NASA/GSFC/ASU LROC.** `terrain/polar-1024-lroc.jpg` is a display-only crop of the [LROC WAC south-pole summer mosaic](https://data.lroc.im-ldi.com/lroc/view_rdr/WAC_ROI_SOUTH_SUMMER) (`WAC_ROI_SOUTH_SUMMER_128P`, 236.901 m/pixel, 128 pixels/degree, images acquired 2010-09-21 through 2010-10-23). The centre 608 km square is cropped, autocontrasted, resampled to 1,024 × 1,024 with Lanczos, and written at JPEG quality 88 by `scripts/imagery.py`; `terrain/polar-1024-lroc.json` records the source hash, georeferencing, processing and limitations. The GeoTIFF georeferencing (polar stereographic, natural origin 90° S / 0° E, R = 1,737,400 m, north-up) matches the terrain grid, so no rotation or mirror is applied. The image shares the terrain pixel grid and is used only as a context layer in the 3D view: it never feeds a direction, horizon, visibility or window calculation. Its illumination is fixed to the 2010 southern summer, so baked shadows do not represent the simulated date, and mosaic seams and exposure differences remain.
+
 **Horizon angles, mast effects and operating windows — Estimated.** The source topography is real, but discretized rays, approximate site coordinates, finite ray length, uncertain local terrain and hourly sampling prevent an operational accuracy claim. No bundled number is a fabricated placeholder. `Estimated` does not imply a quantified confidence interval.
 
 ## Asset formats
 
 `manifest.json` lists site coordinates, DEM-sampled elevation, ephemeris and horizon URLs. The named points are approximate regional reference locations, not surveyed landing sites. In particular, “Shackleton region” and “de Gerlache region” do not assert that the given coordinate lies on a usable rim.
+
+Three of the six sites are Artemis III candidate landing regions from NASA's October 2024 down-selection ([release 24-136](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)): `mons-mouton` (Mons Mouton), `nobile-rim-1` (Nobile Rim 1) and `haworth` (Haworth). Region outlines and individual landing-site ellipses are not modelled. Nobile Rim 1 and Haworth use the published region bounding-box midpoints (−85.438°, 37.445° E and −86.753°, 23.672° W) from a companion south-polar topography dataset ([Zenodo 17954508](https://zenodo.org/records/17954508)); Mons Mouton uses the IAU feature centre (−84.6°, 31.0° E). At that latitude the northern 150 km rays cross the 80° S latitude circle and sample the source DEM square corners, which lie outside the nominal 80–90° S coverage; those samples come from the same LOLA product, but the declared-coverage caveat is repeated in that site's horizon limitations. A candidate region at 84° S or farther north would leave the source square entirely, which is why the fixed 150 km ray limit cannot process the northernmost Artemis regions.
 
 `terrain/polar-1024.bin` is 1,024 × 1,024 unsigned 16-bit little-endian, row-major. Decode height in metres as `minMeters + sample * scaleMeters` using `terrain/polar-1024.json`. Its 608-kilometre square has nominal 593.75-metre display pixels. Each output sample averages a 7–8 pixel block of the original DEM; this uneven integer block partition adds a sub-source-pixel positional approximation to the nominal regular output grid. The visual mesh is for context; horizon calculations use the original 80-metre source. Quantization contributes at most half a stored unit (about 0.109 metres).
 
@@ -28,9 +32,20 @@ For a polar-map horizontal direction, use `[sin(longitude + azimuth), cos(longit
 
 Interpolate the two mast profiles only as an estimated sensitivity model. An 80-metre DEM does not resolve local terrain at the scale of a 2–20-metre antenna. No terrain beyond 150 kilometres is assessed. Frame offsets between LOLA DE421 ME/PA and Horizons' lunar MEAN_ME orientation have not been explicitly transformed or bounded. Do not describe the resulting mast delta as validated engineering performance.
 
+## Machine-readable contract
+
+`schema/data-contract.schema.json` is the source of truth for the shape of every bundled file. The mapping from file to schema definition, the supported JSON Schema subset, and the invariants that remain in Python are documented in `schema/README.md`.
+
+- `lib/data-types.ts` is generated from the schema by `scripts/generate-types.mjs`; `npm run check:contract` fails if the two drift.
+- `scripts/contract.py` validates the objects that `terrain.py`, `ephemeris.py` and `validate_ephemeris.py` are about to write. A malformed asset fails at generation time, not in the browser.
+- `scripts/check_schema.py` validates all five file types plus cross-file linkage (paths resolve, `siteId` agrees, manifest elevation matches the horizon, ephemeris year matches the manifest).
+- `python scripts/check_data.py` runs the schema check and the physical-invariant checks; CI runs it on every change to `public/data/`, `scripts/`, `schema/` or this document.
+
+The schema pins values the frontend assumes: `stepHours: 1`, six ephemeris columns, `azimuthStepDegrees: 1`, 360 skyline points, `[2, 20]` mast heights, `1024 × 1024` uint16 terrain, and the closed set of site ids. Changing any of those is a contract change: edit the schema, regenerate `lib/data-types.ts`, regenerate the data, and run the checks.
+
 ## Solar-crossing reference checks
 
-`validation.json` contains five reference points. For each, the first rising and first setting solar-centre zero-elevation crossing in 2026 is linearly interpolated from hourly source samples, then compared with a separate one-minute Horizons query over that hour. Each comparison preserves the reference query and response hash. The two additional numerical reference points use 2 metres above the reference sphere; they are not operating sites. The first rise and first set are selected independently and may fall in different lunations.
+`validation.json` contains one reference row per shipped site plus two numerical reference points. For each, the first rising and first setting solar-centre zero-elevation crossing in 2026 is linearly interpolated from hourly source samples, then compared with a separate one-minute Horizons query over that hour. Each comparison preserves the reference query and response hash. The two additional numerical reference points use 2 metres above the reference sphere; they are not operating sites. The first rise and first set are selected independently and may fall in different lunations.
 
 This validates hourly interpolation consistency against finer samples from the **same** ephemeris, not independent ephemeris accuracy. The reference is a flat astronomical horizon and solar centre; it does not validate terrain sunrise/sunset or solar upper-limb contact. Do not claim independent JPL agreement for the terrain-based windows. Hourly visibility sampling can miss short windows and shift boundaries by as much as one sample interval; one-minute consistency results do not remove that limitation.
 
@@ -49,34 +64,43 @@ The horizons are also compared against an independent terrain product and ray ma
 | Shackleton | 360 / 360 | −0.01° / −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
 | Malapert | 205 / 360 | 0.00° / 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
 | de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
+| Mons Mouton | 123 / 360 | −0.04° / −0.04° | 0.32° | 0.36° | 30.9 % | 31.2 % |
+| Nobile Rim 1 | 136 / 360 | 1.01° / 0.01° | 2.80° | 2.92° | 21.0 % | 20.9 % |
+| Haworth | 168 / 360 | 0.00° / 0.00° | 0.12° | 0.18° | 23.1 % | 23.1 % |
 
-Where the two products overlap, the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code. Both annual columns are the clamped convention; the app's unclamped 2 m numbers are 30.3 % / 44.7 % / 46.0 % and are not what this table measures.
+Only azimuths whose 150 km ray stays inside the 40 m product enter a row, so `complete` is also the sample size: 360, 205 and 256 for the first three sites, but 123, 136 and 168 for the Artemis sites, which sit near that product's 85° S edge. For the three original sites the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code. Mons Mouton and Haworth still agree closely over their covered sector. **Nobile Rim 1 does not:** its 2 m p95 is 2.80° with a +1.01° median against a +6.78° median shipped skyline, while its 20 m median agrees to 0.01° — the two products resolve the steep near-field rim differently at 2 m. That row is a documented discrepancy, not agreement, and none of these three rows by itself validates an Artemis site's windows.
+
+Both annual columns are the clamped convention; the three original sites' unclamped 2 m numbers are 30.3 % / 44.7 % / 46.0 % and are not what this table measures.
 
 `backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-13 run is the source of the numbers above; the script's `--check` mode guards them.
 
-CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/` or this file changes. The workflow caches the 115 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck` and `npm run build` on Node 24.
+CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/`, `schema/` or this file changes. The workflow caches the 115 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck`, `npm run check:contract` and `npm run build` on Node 24.
 
-Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And Malapert and de Gerlache are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray for those sites, leaving 43 % and 29 % of their sky unchecked.
+Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And most sites are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray, leaving 43 % and 29 % of Malapert's and de Gerlache's sky unchecked, and 53–66 % for the three Artemis sites. Nobile Rim 1's 2 m row is the one place where the two products visibly disagree.
 
 This is a drift guard, not a physical validation. It cannot detect a wrong-but-consistent pipeline: if the ray march were wrong in the same way on both sides, the comparison would still pass. Agreement means the shipped numbers can be rebuilt from published data, not that they are correct.
 
 ## Reproduce
 
-Run from the repository root. Python's standard library handles ephemerides and integrity checks; only terrain preparation requires NumPy. A full rerun downloads approximately 116 MB of source terrain plus cached text ephemerides. The source/cache directory is intentionally not a runtime asset. Only `scripts/` writes `public/data/`; see `scripts/README.md` for the ownership rule.
+Run from the repository root. Python's standard library handles ephemerides and integrity checks; terrain and imagery preparation require NumPy, and imagery also needs Pillow. A full rerun downloads approximately 116 MB of source terrain + 141 MB of LROC imagery plus cached text ephemerides. The source/cache directory is intentionally not a runtime asset. Only `scripts/` writes `public/data/`; see `scripts/README.md` for the ownership rule.
 
 ```sh
 mkdir -p work/data-source
 python3 -m venv work/data-venv
-work/data-venv/bin/pip install numpy==2.0.2
+work/data-venv/bin/pip install numpy==2.0.2 pillow
 curl --fail --location https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_80M.IMG --output work/data-source/LDEM_80S_80M.IMG
 curl --fail --location https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_80M.LBL --output public/data/terrain/source.LBL
+curl --fail --location https://pds.lroc.im-ldi.com/data/LRO-L-LROC-5-RDR-V1.0/LROLRC_2001/EXTRAS/BROWSE/WAC_ROI/WAC_ROI_SOUTH_SUMMER/WAC_ROI_SOUTH_SUMMER_128P.TIF --output work/data-source/WAC_ROI_SOUTH_SUMMER_128P.TIF
 work/data-venv/bin/python scripts/terrain.py --source work/data-source/LDEM_80S_80M.IMG
+work/data-venv/bin/python scripts/imagery.py --source work/data-source/WAC_ROI_SOUTH_SUMMER_128P.TIF
 python3 scripts/ephemeris.py
 python3 scripts/validate_ephemeris.py
 work/data-venv/bin/python scripts/terrain.py --self-test
+work/data-venv/bin/python scripts/imagery.py --self-test
 work/data-venv/bin/python scripts/check_reproducibility.py --source work/data-source/LDEM_80S_80M.IMG
 python3 scripts/ephemeris.py --self-test
 python3 scripts/validate_ephemeris.py --self-test
+python3 scripts/check_schema.py --self-test
 python3 scripts/check_data.py
 ```
 

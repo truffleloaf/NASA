@@ -16,6 +16,7 @@ Open http://localhost:3000.
 ```sh
 npm test
 npm run typecheck
+npm run check:contract
 npm run build
 ```
 
@@ -33,7 +34,7 @@ The production build exports a static site to `out/`. Serve that directory with 
 
 ## Data model
 
-`lib/science.ts` reads the bundled `public/data/manifest.json`, the per-site hourly JPL Horizons ephemeris, and the 2 m/20 m terrain-skyline profiles. It computes sunlight, Earth visibility, and operating windows in the browser. The terrain is an 80 m LOLA `LDEM_80S_80M` resampling; `docs/DATA.md` documents the sources, formats, and limits. The `backend/` pipeline independently recomputes the skyline from the 40 m `LDEM_85S_40M` product and compares the two; it is not a runtime dependency.
+`lib/science.ts` reads the bundled `public/data/manifest.json`, the per-site hourly JPL Horizons ephemeris, and the 2 m/20 m terrain-skyline profiles. It computes sunlight, Earth visibility, and operating windows in the browser. The terrain is an 80 m LOLA `LDEM_80S_80M` resampling; `docs/DATA.md` documents the sources, formats, and limits. `schema/data-contract.schema.json` is the machine-readable contract for those files; `lib/data-types.ts` is generated from it, and the Python writers validate against it. The `backend/` pipeline independently recomputes the skyline from the 40 m `LDEM_85S_40M` product and compares the two; it is not a runtime dependency.
 
 Lighting, horizon positions, coverage, and elevation grid are estimates, not scientific results. Marker labels are offset for readability. No safety score or NASA-derived forecast is produced.
 

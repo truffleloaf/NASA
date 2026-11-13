@@ -232,10 +232,10 @@ public/data/terrain/polar-1024.json
 public/data/validation.json
 ```
 
-`docs/DATA.md` is the contract: 80 m DEM, 8,761 hourly ephemeris rows with angular
-diameters, 2 m and 20 m skyline profiles (negative angles kept), 1° azimuth bins, and
-`elevationMeters + 2 m` observer altitude. The browser computes windows from those rows and
-profiles; nothing is fetched from a backend at runtime.
+`docs/DATA.md` and `schema/data-contract.schema.json` are the contract: 80 m DEM, 8,761
+hourly ephemeris rows with angular diameters, 2 m and 20 m skyline profiles (negative angles
+kept), 1° azimuth bins, and `elevationMeters + 2 m` observer altitude. The browser computes
+windows from those rows and profiles; nothing is fetched from a backend at runtime.
 
 `cross_product.py` is the only backend code that reads this product. It is a check, not a
 generator: it compares the shipped 80 m horizons with an independent 40 m recomputation.

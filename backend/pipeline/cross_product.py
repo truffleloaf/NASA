@@ -58,9 +58,16 @@ COMPLETE_FRACTION = 0.95
 MASTS = (2.0, 20.0)
 MAX_RANGE_M = horizon.DEFAULT_MAX_RANGE_M
 
-# Baseline produced by this script on the assets committed at the time of the
-# frontend's cross-product documentation commit (main 5e42bba).  The check
+# Baseline produced by this script on the shipped assets.  The check
 # tolerances allow for display rounding.
+#
+# ``complete`` is the number of 1 deg azimuths whose 150 km ray stays inside
+# the 40 m product; only those are compared.  The three Artemis sites sit close
+# to its 85 S edge, so a majority of their azimuths (the northern sector) are
+# excluded and their rows are weaker evidence than the first three.  Nobile Rim
+# 1 is the known exception: the 40 m and 80 m products resolve its steep
+# near-field rim differently, so its 2 m p95 (2.80 deg) is a documented
+# discrepancy, not agreement.
 EXPECTED = {
     "shackleton": dict(complete=360, median_2=-0.01, median_20=-0.01,
                        p95=0.26, maximum=0.50, annual_80=23.7, annual_40=23.8),
@@ -68,6 +75,12 @@ EXPECTED = {
                      p95=0.10, maximum=0.20, annual_80=39.8, annual_40=39.9),
     "de-gerlache": dict(complete=256, median_2=0.00, median_20=0.00,
                         p95=0.45, maximum=0.66, annual_80=30.5, annual_40=29.0),
+    "mons-mouton": dict(complete=123, median_2=-0.04, median_20=-0.04,
+                        p95=0.32, maximum=0.36, annual_80=30.9, annual_40=31.2),
+    "nobile-rim-1": dict(complete=136, median_2=1.01, median_20=0.01,
+                         p95=2.80, maximum=2.92, annual_80=21.0, annual_40=20.9),
+    "haworth": dict(complete=168, median_2=0.00, median_20=0.00,
+                    p95=0.12, maximum=0.18, annual_80=23.1, annual_40=23.1),
 }
 
 # Values printed in docs/DATA.md.  Kept separately so this script can report
@@ -76,6 +89,9 @@ DOCUMENTED = {
     "shackleton": dict(complete=360, p95=0.26, annual_40=23.8),
     "malapert": dict(complete=205, p95=0.10, annual_40=39.9),
     "de-gerlache": dict(complete=256, p95=0.45, annual_40=29.0),
+    "mons-mouton": dict(complete=123, p95=0.32, annual_40=31.2),
+    "nobile-rim-1": dict(complete=136, p95=2.80, annual_40=20.9),
+    "haworth": dict(complete=168, p95=0.12, annual_40=23.1),
 }
 
 
