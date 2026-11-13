@@ -1,6 +1,7 @@
+import { adviceFor } from "@/lib/planning";
 import { ArrowRight, Download } from "lucide-react";
 import type { CSSProperties } from "react";
-import { formatTime, suggestRelaxation } from "@/lib/science";
+import { formatTime } from "@/lib/science";
 import type { MissionState } from "./use-mission";
 import { Card } from "../ui/card";
 import { ProvenanceBadge } from "../ui/provenance-badge";
@@ -15,10 +16,10 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
             {m.selected.name} · {m.config.start} to {m.config.end} UTC <ProvenanceBadge />
           </p>
         </div>
-        <button className="action-outline" onClick={m.downloadCSV}>
+        {m.expert && <button className="action-outline" onClick={m.downloadCSV}>
           <Download />
           Download CSV
-        </button>
+        </button>}
       </div>
       <p className="muted">
         Ranked by duration, then Earth-link uptime. Sunlight stays continuous; communication gaps follow your blackout
@@ -27,7 +28,7 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
       {!m.result.windows.length ? (
         <Card className="empty-state">
           <h2>No qualifying windows</h2>
-          <p>{suggestRelaxation(m.result, m.config)}</p>
+          <p>{adviceFor(m.result, m.config, m.siteData)}</p>
           <ProvenanceBadge />
           <button className="action-outline" onClick={onExplore}>
             Adjust mission limits
@@ -38,7 +39,7 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
         <div className="window-list">
           {m.result.windows.map((win, i) => (
             <Card
-              className="window-row"
+              className={`window-row ${m.selectedWindow === win.id ? "selected-window" : ""}`}
               key={win.id}
               style={{ "--row-delay": `${i * 40}ms`, animationName: i < 8 ? undefined : "none" } as CSSProperties}
             >
@@ -67,6 +68,7 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
               <button
                 className="action-outline"
                 onClick={() => {
+                  m.setPlaying(false);
                   m.seek(win.start);
                   m.setSelectedWindow(win.id);
                   onExplore();

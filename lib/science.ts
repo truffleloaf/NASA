@@ -1,4 +1,6 @@
 import type { Ephemeris, HorizonData, Site, SiteId } from "./data-types";
+import { SITE_IDS } from "./data-types";
+export { SITE_IDS };
 export type {
   Ephemeris,
   EphemerisRow,
@@ -73,14 +75,6 @@ export const DEFAULT_CONFIG: MissionConfig = {
   hour: 12,
 };
 export const HOUR = 3_600_000;
-export const SITE_IDS: SiteId[] = [
-  "shackleton",
-  "malapert",
-  "de-gerlache",
-  "mons-mouton",
-  "nobile-rim-1",
-  "haworth",
-];
 export function dateMs(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
   const ms = Date.parse(value + "T00:00:00Z");

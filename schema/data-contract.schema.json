@@ -38,6 +38,93 @@
       },
       "additionalProperties": false
     },
+    "imagery": {
+      "title": "Imagery",
+      "description": "Metadata for the display-only LROC basemap that shares the terrain pixel grid. It is never used for a direction, horizon or window calculation.",
+      "type": "object",
+      "required": [
+        "version",
+        "path",
+        "width",
+        "height",
+        "sha256",
+        "grid",
+        "source",
+        "processing",
+        "orientation",
+        "alignmentReport",
+        "credit",
+        "license",
+        "provenance",
+        "limitations"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "path": { "const": "/data/terrain/polar-1024-lroc.jpg" },
+        "width": { "const": 1024 },
+        "height": { "const": 1024 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "grid": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "object",
+          "required": [
+            "name",
+            "url",
+            "sha256",
+            "nativePixelsPerDegree",
+            "metersPerPixel",
+            "acquisition",
+            "sourceSize",
+            "cropPixels",
+            "georeferencing"
+          ],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "format": "uri" },
+            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "nativePixelsPerDegree": { "type": "number", "exclusiveMinimum": 0 },
+            "metersPerPixel": { "type": "number", "exclusiveMinimum": 0 },
+            "acquisition": { "type": "string", "minLength": 1 },
+            "sourceSize": {
+              "type": "array",
+              "prefixItems": [{ "type": "integer" }, { "type": "integer" }],
+              "items": false,
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "cropPixels": { "type": "integer", "exclusiveMinimum": 0 },
+            "georeferencing": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "processing": { "type": "string", "minLength": 1 },
+        "orientation": {
+          "type": "object",
+          "required": ["rotationDegrees", "mirrored", "basis"],
+          "properties": {
+            "rotationDegrees": { "const": 0 },
+            "mirrored": { "const": false },
+            "basis": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "alignmentReport": {
+          "oneOf": [
+            { "type": "number", "minimum": -1, "maximum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "credit": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "provenance": { "const": "Provided" },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
     "ephemerisRow": {
       "title": "EphemerisRow",
       "description": "One hourly sample: [sunAzimuth, sunElevation, sunDiameter, earthAzimuth, earthElevation, earthDiameter], degrees.",

@@ -51,6 +51,9 @@ def validate_all(data_dir: Path = DEFAULT_DATA) -> int:
     for key in ("terrain", "terrainHeader"):
         if not (data_dir / manifest[key].removeprefix("/data/")).is_file():
             raise ContractError(f"manifest.json: {key} path does not exist: {manifest[key]}")
+    imagery = data_dir / "terrain" / "polar-1024-lroc.json"
+    if imagery.is_file():
+        _checked(imagery, "imagery", data_dir)
 
     for site in manifest["sites"]:
         ephemeris = _checked(

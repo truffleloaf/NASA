@@ -53,7 +53,8 @@ AZ_STEP_DEG = 1.0
 COMPARE_ORIGIN_DEG = 0.5
 # The backend's own run_horizon.py calls an azimuth "complete" when the ray
 # reaches at least 95% of the configured range; docs/DATA.md uses the same
-# convention (360 / 205 / 256 complete azimuths for the three sites).
+# convention (360 / 205 / 256 complete azimuths for the three original sites,
+# 123 / 136 / 168 for the three Artemis sites).
 COMPLETE_FRACTION = 0.95
 MASTS = (2.0, 20.0)
 MAX_RANGE_M = horizon.DEFAULT_MAX_RANGE_M

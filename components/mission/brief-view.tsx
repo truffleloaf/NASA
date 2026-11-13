@@ -1,5 +1,6 @@
 "use client";
 import { Printer, Download, Link as LinkIcon } from "lucide-react";
+import { coordinates } from "@/lib/planning";
 import { formatTime } from "@/lib/science";
 import type { MissionState } from "./use-mission";
 import { Card } from "../ui/card";
@@ -45,7 +46,7 @@ export function BriefView({ mission: m }: { mission: MissionState }) {
           {m.config.start} — {m.config.end} · UTC
         </p>
         <p>
-          {Math.abs(m.selected.lat)}° S, {m.selected.lon}° E · Representative coordinate, not a certified landing site.
+          {coordinates(m.selected.lat,m.selected.lon)} · Representative coordinate, not a certified landing site.
         </p>
         <h3>
           Planning assumptions <ProvenanceBadge />
@@ -133,7 +134,8 @@ export function BriefView({ mission: m }: { mission: MissionState }) {
         <p className="small muted">
           Exploratory planning, not flight operations. Terrain resolution, reference-frame differences and distant
           terrain limit accuracy. Earth visibility does not guarantee a communications link budget. Full sources,
-          formulas and checks: <a href="/methods/">/methods</a>.
+          formulas and checks: <a href={`/methods/#source-${m.config.site}`}>NASA source record for this site</a>.
+          {" "}<a href="/data/source-audit.json">Verification and file checksums</a>.
         </p>
       </Card>
     </div>

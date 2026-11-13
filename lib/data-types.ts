@@ -11,6 +11,36 @@ export type TerrainSource = {
   originalMetersPerPixel: number;
   sourceEpoch: string;
 };
+export type Imagery = {
+  version: 1;
+  path: "/data/terrain/polar-1024-lroc.jpg";
+  width: 1024;
+  height: 1024;
+  sha256: string;
+  grid: string;
+  source: {
+    name: string;
+    url: string;
+    sha256: string;
+    nativePixelsPerDegree: number;
+    metersPerPixel: number;
+    acquisition: string;
+    sourceSize: [number, number];
+    cropPixels: number;
+    georeferencing: string;
+  };
+  processing: string;
+  orientation: {
+    rotationDegrees: 0;
+    mirrored: false;
+    basis: string;
+  };
+  alignmentReport: number | null;
+  credit: string;
+  license: string;
+  provenance: "Provided";
+  limitations: string[];
+};
 export type EphemerisRow = [number, number, number, number, number, number];
 export type Site = {
   id: SiteId;
@@ -132,3 +162,5 @@ export type ValidationReport = {
   rows: ValidationRow[];
   limitations: string[];
 };
+
+export const SITE_IDS = ["shackleton", "malapert", "de-gerlache", "mons-mouton", "nobile-rim-1", "haworth"] as const;

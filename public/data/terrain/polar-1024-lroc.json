@@ -25,7 +25,7 @@
     "mirrored": false,
     "basis": "GeoTIFF georeferencing matches the terrain grid; no rotation or mirror applied."
   },
-  "alignmentReport": null,
+  "alignmentReport": 0.225,
   "credit": "NASA/GSFC/Arizona State University, LROC WAC south-pole summer mosaic; Speyerer et al. (2020), Lunar Surface Science Workshop abstract 5132.",
   "license": "NASA/GSFC/ASU LROC imagery; free to use with credit. Not a NASA endorsement of this project.",
   "provenance": "Provided",

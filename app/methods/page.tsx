@@ -3,6 +3,7 @@ import { ArrowLeft, Orbit } from "lucide-react";
 import validation from "@/public/data/validation.json";
 import { Card } from "@/components/ui/card";
 import { ProvenanceBadge } from "@/components/ui/provenance-badge";
+import { DataSources } from "@/components/mission/data-sources";
 export const metadata: Metadata = {
   title: "Methods & validation — Lunar Mission Navigator",
   description: "Sources, formulas, data resolution and honest limits of lunar operating-window estimates.",
@@ -39,13 +40,14 @@ export default function MethodsPage() {
         <Card>
           <h2>How to read the badges</h2>
           <p>
-            <ProvenanceBadge kind="Computed" /> A value read straight from the bundled datasets: site coordinates, Sun
+            <ProvenanceBadge kind="Computed" /> A value read straight from the bundled datasets: Sun
             and Earth directions and angular diameters from the JPL ephemeris, elevation samples from the LOLA DEM, and
             dataset dimensions. No modelling step sits between the file and the number.
           </p>
           <p>
             <ProvenanceBadge /> A value that needs a model between the data and the number: terrain horizons,
             interpolated samples, visibility percentages, window times, mast deltas, fit ranks and heatmap hours.
+            Representative site coordinates are planning references, not surveyed or NASA-approved landing pads.
           </p>
           <p>
             <ProvenanceBadge kind="Illustrative" /> A visual aid, such as the landing Moon, exaggerated relief or
@@ -85,6 +87,30 @@ export default function MethodsPage() {
             static assets.
           </p>
         </Card>
+        <DataSources />
+        <Card>
+          <h2>Site-specific limits</h2>
+          <p>
+            The six sites are not equally constrained. These notes come from the cross-product check against the
+            independent 40 m DEM and from each site&apos;s horizon metadata; the full table is in <code>docs/DATA.md</code>.
+          </p>
+          <ul>
+            <li>
+              <strong>Nobile Rim 1</strong>: the 40 m comparison covers 136 of 360 azimuths and disagrees at 2 m
+              (p95 2.80°, median +1.01°), while the 20 m median agrees to 0.01°. The two DEMs resolve its steep
+              near-field rim differently; that row is a documented discrepancy, not agreement.
+            </li>
+            <li>
+              <strong>Mons Mouton</strong>: at 84.6° S the northern 150 km rays leave the nominal 80–90° S coverage and
+              sample the source DEM&apos;s square corners. The limitation is recorded in that site&apos;s horizon file.
+            </li>
+            <li>
+              <strong>Artemis sites</strong>: the 40 m cross-check covers only 123–168 of 360 azimuths for Mons Mouton,
+              Nobile Rim 1 and Haworth, because the comparison DEM ends at 85° S. Those rows do not validate a whole
+              site or its windows.
+            </li>
+          </ul>
+        </Card>
         <Card>
           <h2>
             From elevations to windows <ProvenanceBadge />
@@ -113,7 +139,7 @@ export default function MethodsPage() {
             <li>
               Earth uptime is visible hourly samples divided by total samples. The mast delta compares against the 2 m
               baseline for the same period. Windows rank by duration, then uptime, then start time. “Duration covered”
-              is the available/requested duration ratio capped at 100%; it is not a safety score.
+              is the longest qualifying window divided by the selected planning period; it is not a safety score.
             </li>
             <li>
               The annual heatmap counts hours falling inside qualifying windows for each day, applying the current

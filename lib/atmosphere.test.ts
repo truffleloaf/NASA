@@ -22,8 +22,8 @@ test("protected copy clears AA even over a fully white nebula texture", () => {
       .map((v) => v / 255)
       .map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
       .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
-  const background = [10, 13, 18].map((v) => v * (1 - 0.32 * 0.2) + 255 * 0.32 * 0.2);
-  const ratio = (luminance([154, 163, 178]) + 0.05) / (luminance(background) + 0.05);
+  const background = [5, 7, 12].map((v) => v * (1 - 0.035) + 255 * 0.035);
+  const ratio = (luminance([140, 151, 168]) + 0.05) / (luminance(background) + 0.05);
   assert.ok(ratio >= 4.5);
   console.log(`Conservative hero muted-text contrast: ${ratio.toFixed(2)}:1`);
 });
