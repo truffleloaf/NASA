@@ -3,10 +3,13 @@
 import hashlib
 import json
 import math
+import sys
 from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]/'public/data'
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_schema import validate_all
 
 
 def read(path):
@@ -14,6 +17,7 @@ def read(path):
 
 
 def main():
+    validate_all(ROOT)
     manifest = read(ROOT/'manifest.json')
     assert manifest['status'] == 'ready'
     header = read(ROOT/'terrain/polar-1024.json')
@@ -38,10 +42,18 @@ def main():
         assert len(low) == len(high) == 360
         assert all(math.isfinite(v) and -90 < v < 90 for v in low+high)
         assert all(a >= b for a,b in zip(low,high)), 'A taller mast cannot raise the obstruction angle.'
+    imagery_meta = ROOT/'terrain/polar-1024-lroc.json'
+    if imagery_meta.exists():
+        imagery = read(imagery_meta)
+        image = ROOT/Path(imagery['path']).relative_to('/data')
+        assert image.is_file(), 'The bundled LROC imagery is missing.'
+        assert imagery['width'] == imagery['height'] == 1024
+        assert hashlib.sha256(image.read_bytes()).hexdigest() == imagery['sha256']
+        assert imagery['provenance'] == 'Provided'
     validation = ROOT/'validation.json'
     if validation.exists():
         references = read(validation)['rows']
-        assert len(references) == 5
+        assert len(references) == len(manifest['sites']) + 2
         for point in references:
             for event in ('sunrise','sunset'):
                 if point[event] is not None:

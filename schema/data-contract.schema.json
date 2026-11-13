@@ -1,0 +1,482 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lunar-mission-navigator.local/schema/data-contract.schema.json",
+  "title": "Lunar Mission Navigator bundled data contract",
+  "description": "The static files under public/data/ are the only interface between the Python data pipeline and the Next.js frontend. Entry points are the definitions under $defs; schema/README.md maps each file to its definition. The schema is the source of truth for lib/data-types.ts and scripts/contract.py.",
+  "$defs": {
+    "provenance": {
+      "title": "Provenance",
+      "description": "The honesty label rendered next to every number in the UI.",
+      "type": "string",
+      "enum": ["Computed", "Illustrative", "Estimated"]
+    },
+    "siteId": {
+      "title": "SiteId",
+      "description": "Site identifiers are a closed set: adding one requires a frontend, schema and data change.",
+      "type": "string",
+      "enum": ["shackleton", "malapert", "de-gerlache", "mons-mouton", "nobile-rim-1", "haworth"]
+    },
+    "terrainSource": {
+      "title": "TerrainSource",
+      "description": "Provenance of the 80 m LOLA source product shared by the terrain header and every horizon file.",
+      "type": "object",
+      "required": [
+        "name",
+        "url",
+        "labelUrl",
+        "sha256",
+        "originalMetersPerPixel",
+        "sourceEpoch"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "labelUrl": { "type": "string", "format": "uri" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "originalMetersPerPixel": { "type": "number", "exclusiveMinimum": 0 },
+        "sourceEpoch": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "ephemerisRow": {
+      "title": "EphemerisRow",
+      "description": "One hourly sample: [sunAzimuth, sunElevation, sunDiameter, earthAzimuth, earthElevation, earthDiameter], degrees.",
+      "type": "array",
+      "prefixItems": [
+        { "type": "number", "minimum": 0, "maximum": 360 },
+        { "type": "number", "minimum": -90, "maximum": 90 },
+        { "type": "number", "exclusiveMinimum": 0, "maximum": 10 },
+        { "type": "number", "minimum": 0, "maximum": 360 },
+        { "type": "number", "minimum": -90, "maximum": 90 },
+        { "type": "number", "exclusiveMinimum": 0, "maximum": 10 }
+      ],
+      "items": false,
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "site": {
+      "title": "Site",
+      "description": "A named planning point. Coordinates are approximate regional references, not surveyed landing sites.",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "lat",
+        "lon",
+        "elevationMeters",
+        "provenance",
+        "ephemeris",
+        "horizon"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/siteId" },
+        "name": { "type": "string", "minLength": 1 },
+        "lat": { "type": "number", "minimum": -90, "maximum": 0 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "elevationMeters": { "type": "number", "minimum": -12000, "maximum": 12000 },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "ephemeris": {
+          "type": "string",
+          "pattern": "^/data/ephemeris/[a-z0-9-]+\\.json$"
+        },
+        "horizon": {
+          "type": "string",
+          "pattern": "^/data/horizon/[a-z0-9-]+\\.json$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "manifest": {
+      "title": "Manifest",
+      "description": "Entry point read at build time. A shipped manifest is status=ready and also carries ephemerisProvenance and visibilityProvenance; the intermediate terrain-ready state written by terrain.py does not.",
+      "type": "object",
+      "required": [
+        "version",
+        "year",
+        "terrain",
+        "terrainHeader",
+        "sites",
+        "status",
+        "provenance"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "year": { "type": "integer", "minimum": 2025, "maximum": 2100 },
+        "terrain": {
+          "type": "string",
+          "pattern": "^/data/terrain/[a-z0-9-]+\\.bin$"
+        },
+        "terrainHeader": {
+          "type": "string",
+          "pattern": "^/data/terrain/[a-z0-9-]+\\.json$"
+        },
+        "sites": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/site" }
+        },
+        "status": { "type": "string", "enum": ["terrain-ready", "ready"] },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "ephemerisProvenance": { "const": "Computed" },
+        "visibilityProvenance": { "const": "Estimated" }
+      },
+      "additionalProperties": false
+    },
+    "ephemeris": {
+      "title": "Ephemeris",
+      "description": "Hourly JPL Horizons Sun and Earth directions for one site. The frontend assumes stepHours=1, six columns, and UTC start/end.",
+      "type": "object",
+      "required": [
+        "version",
+        "siteId",
+        "start",
+        "end",
+        "stepHours",
+        "fields",
+        "rows",
+        "provenance",
+        "source",
+        "limitations"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "siteId": { "$ref": "#/$defs/siteId" },
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "stepHours": { "const": 1 },
+        "fields": {
+          "const": [
+            "sunAzimuthDegrees",
+            "sunElevationDegrees",
+            "sunDiameterDegrees",
+            "earthAzimuthDegrees",
+            "earthElevationDegrees",
+            "earthDiameterDegrees"
+          ]
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/ephemerisRow" }
+        },
+        "provenance": { "const": "Computed" },
+        "source": {
+          "type": "object",
+          "required": [
+            "name",
+            "documentation",
+            "queries",
+            "observer",
+            "coordinates"
+          ],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "documentation": { "type": "string", "format": "uri" },
+            "queries": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["body", "url", "sha256", "apiVersion"],
+                "properties": {
+                  "body": { "type": "string", "enum": ["Sun", "Earth"] },
+                  "url": { "type": "string", "format": "uri" },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                  "apiVersion": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "observer": {
+              "type": "object",
+              "required": [
+                "center",
+                "coordinateType",
+                "latitudeDegrees",
+                "eastLongitudeDegrees",
+                "altitudeMeters"
+              ],
+              "properties": {
+                "center": { "const": "coord@301" },
+                "coordinateType": { "const": "GEODETIC" },
+                "latitudeDegrees": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "eastLongitudeDegrees": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                "altitudeMeters": { "type": "number" }
+              },
+              "additionalProperties": false
+            },
+            "coordinates": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "horizon": {
+      "title": "HorizonData",
+      "description": "Estimated terrain skyline per mast height. Negative angles are kept; the frontend uses the 2 m profile for the Sun and the selected mast for Earth.",
+      "type": "object",
+      "required": [
+        "version",
+        "siteId",
+        "azimuthStepDegrees",
+        "mastHeightsMeters",
+        "profiles",
+        "provenance",
+        "source",
+        "method",
+        "rayStepMeters",
+        "rayLimitKm",
+        "siteElevationMeters",
+        "limitations"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "siteId": { "$ref": "#/$defs/siteId" },
+        "azimuthStepDegrees": { "const": 1 },
+        "mastHeightsMeters": {
+          "type": "array",
+          "prefixItems": [{ "const": 2 }, { "const": 20 }],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "profiles": {
+          "type": "object",
+          "required": ["2", "20"],
+          "properties": {
+            "2": {
+              "type": "array",
+              "minItems": 360,
+              "maxItems": 360,
+              "items": { "type": "number", "minimum": -90, "maximum": 90 }
+            },
+            "20": {
+              "type": "array",
+              "minItems": 360,
+              "maxItems": 360,
+              "items": { "type": "number", "minimum": -90, "maximum": 90 }
+            }
+          },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 360,
+            "maxItems": 360,
+            "items": { "type": "number", "minimum": -90, "maximum": 90 }
+          }
+        },
+        "provenance": { "const": "Estimated" },
+        "source": { "$ref": "#/$defs/terrainSource" },
+        "method": { "type": "string", "minLength": 1 },
+        "rayStepMeters": { "const": 80 },
+        "rayLimitKm": { "const": 150 },
+        "siteElevationMeters": { "type": "number" },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "terrainHeader": {
+      "title": "TerrainHeader",
+      "description": "Describes terrain/polar-1024.bin: 1024x1024 uint16 little-endian, height = minMeters + sample * scaleMeters.",
+      "type": "object",
+      "required": [
+        "version",
+        "width",
+        "height",
+        "encoding",
+        "minMeters",
+        "maxMeters",
+        "scaleMeters",
+        "kmPerPixel",
+        "extentKm",
+        "boundsKm",
+        "validRadiusKm",
+        "referenceRadiusKm",
+        "projection",
+        "orientation",
+        "latitudeCoverage",
+        "referenceFrame",
+        "resampling",
+        "source",
+        "provenance",
+        "binarySha256",
+        "limitations"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "width": { "const": 1024 },
+        "height": { "const": 1024 },
+        "encoding": { "const": "uint16-le" },
+        "minMeters": { "type": "number" },
+        "maxMeters": { "type": "number" },
+        "scaleMeters": { "type": "number", "exclusiveMinimum": 0 },
+        "kmPerPixel": { "type": "number", "exclusiveMinimum": 0 },
+        "extentKm": { "type": "number", "exclusiveMinimum": 0 },
+        "boundsKm": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" },
+            { "type": "number" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "validRadiusKm": { "type": "number", "exclusiveMinimum": 0 },
+        "referenceRadiusKm": { "type": "number", "exclusiveMinimum": 0 },
+        "projection": { "type": "string", "minLength": 1 },
+        "orientation": { "type": "string", "minLength": 1 },
+        "latitudeCoverage": {
+          "type": "array",
+          "prefixItems": [{ "const": -90 }, { "const": -80 }],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "referenceFrame": { "type": "string", "minLength": 1 },
+        "resampling": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/terrainSource" },
+        "provenance": { "const": "Computed" },
+        "binarySha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "validationEvent": {
+      "title": "ValidationEvent",
+      "description": "One reference solar-centre zero-elevation crossing, comparing hourly interpolation with a one-minute query of the same ephemeris.",
+      "type": "object",
+      "required": [
+        "hourlyInterpolatedUtc",
+        "horizonsMinuteInterpolatedUtc",
+        "differenceSeconds",
+        "sourceUrl",
+        "sourceSha256"
+      ],
+      "properties": {
+        "hourlyInterpolatedUtc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "horizonsMinuteInterpolatedUtc": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "differenceSeconds": { "type": "number" },
+        "sourceUrl": { "type": "string", "format": "uri" },
+        "sourceSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "validationRow": {
+      "title": "ValidationRow",
+      "description": "A site or numerical reference point. reference-east and reference-west are test points, not operating sites, so id is not restricted to SiteId.",
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "lat",
+        "lon",
+        "observerAltitudeMeters",
+        "hourlySourceUrl",
+        "hourlySourceSha256",
+        "sunrise",
+        "sunset"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "lat": { "type": "number", "minimum": -90, "maximum": 0 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+        "observerAltitudeMeters": { "type": "number" },
+        "hourlySourceUrl": { "type": "string", "format": "uri" },
+        "hourlySourceSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sunrise": {
+          "oneOf": [
+            { "$ref": "#/$defs/validationEvent" },
+            { "type": "null" }
+          ]
+        },
+        "sunset": {
+          "oneOf": [
+            { "$ref": "#/$defs/validationEvent" },
+            { "type": "null" }
+          ]
+        },
+        "sunriseUnavailableReason": { "type": "string", "minLength": 1 },
+        "sunsetUnavailableReason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "validationReport": {
+      "title": "ValidationReport",
+      "description": "Sampling/interpolation consistency checks against the same ephemeris; not independent model validation.",
+      "type": "object",
+      "required": [
+        "version",
+        "provenance",
+        "method",
+        "source",
+        "documentation",
+        "rows",
+        "limitations"
+      ],
+      "properties": {
+        "version": { "const": 1 },
+        "provenance": { "const": "Estimated" },
+        "method": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "documentation": { "type": "string", "format": "uri" },
+        "rows": {
+          "type": "array",
+          "minItems": 5,
+          "items": { "$ref": "#/$defs/validationRow" }
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

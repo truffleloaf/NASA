@@ -6,6 +6,7 @@ on:
       - "public/data/**"
       - "backend/**"
       - "scripts/**"
+      - "schema/**"
       - "docs/DATA.md"
       - ".github/workflows/backend-data-check.yml"
   push:
@@ -14,6 +15,7 @@ on:
       - "public/data/**"
       - "backend/**"
       - "scripts/**"
+      - "schema/**"
       - "docs/DATA.md"
       - ".github/workflows/backend-data-check.yml"
   workflow_dispatch:
@@ -40,6 +42,12 @@ jobs:
 
       - name: Compile backend
         run: python -m compileall -q backend/pipeline
+
+      - name: Schema validator self-test
+        run: python scripts/check_schema.py --self-test
+
+      - name: Validate bundled data against the contract
+        run: python scripts/check_data.py
 
       - name: Cache 40 m LOLA DEM
         uses: actions/cache@v4
@@ -70,6 +78,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Contract types are current
+        run: npm run check:contract
 
       - name: Unit and bundled-data tests
         run: npm test
