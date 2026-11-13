@@ -1,14 +1,16 @@
 "use client";
 import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { PCFSoftShadowMap } from "three";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { PCFShadowMap } from "three";
 import type { MissionState } from "../mission/use-mission";
 import type { LayersState } from "../mission/map-panel";
 import { PolarTerrain } from "./PolarTerrain";
 import { SurfaceView } from "./SurfaceView";
 import { Skeleton } from "../ui/skeleton";
 import header from "@/public/data/terrain/polar-1024.json";
+import type { TerrainReading } from "@/lib/terrain";
 export type SceneProps = {
+  onTerrain: (reading: TerrainReading | null) => void;
   mission: MissionState;
   mode: string;
   layers: LayersState;
@@ -27,6 +29,16 @@ class SceneBoundary extends Component<{ children: ReactNode; onError: () => void
   render() {
     return this.state.failed ? null : this.props.children;
   }
+}
+function ContextLifecycle({ onFallback, description }: { onFallback: () => void; description: string }) {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => { gl.domElement.setAttribute("role","img"); gl.domElement.setAttribute("aria-label",description); }, [gl,description]);
+  useEffect(() => {
+    const canvas = gl.domElement;
+    canvas.addEventListener("webglcontextlost", onFallback);
+    return () => canvas.removeEventListener("webglcontextlost", onFallback);
+  }, [gl, onFallback]);
+  return null;
 }
 function FrameMeter({ report }: { report: (text: string) => void }) {
   const frames = useRef({ count: 0, start: 0 });
@@ -75,18 +87,16 @@ export default function Scene(props: SceneProps) {
     <SceneBoundary onError={props.onFallback}>
       <Canvas
         className="terrain-arrival"
-        role="img"
+        role="group"
         aria-label={description}
         dpr={[1, 2]}
         frameloop={props.mission.playing ? "always" : "demand"}
-        shadows={{ type: PCFSoftShadowMap }}
+        shadows={{ type: PCFShadowMap }}
         camera={{ position: [0, 15, 18], fov: 42, near: 0.01, far: 150 }}
-        onCreated={({ gl }) => {
-          gl.domElement.addEventListener("webglcontextlost", props.onFallback, { once: true });
-        }}
         fallback={<p>WebGL unavailable. Use the 2D accessible map.</p>}
       >
-        <color attach="background" args={["#0A0D12"]} />
+        <color attach="background" args={["#05070C"]} />
+        <ContextLifecycle onFallback={props.onFallback} description={description} />
         <Suspense fallback={null}>
           {props.mode === "surface" ? (
             <SurfaceView mission={props.mission} yaw={yaw} />
@@ -98,6 +108,10 @@ export default function Scene(props: SceneProps) {
       </Canvas>
       {props.mode === "surface" && (
         <div className="compass-control">
+          <div className="surface-look">
+            <button disabled={!sample} onClick={() => sample && setYaw(Math.round(sample.sunAz) % 360)}>Face Sun</button>
+            <button disabled={!sample} onClick={() => sample && setYaw(Math.round(sample.earthAz) % 360)}>Face Earth</button>
+          </div>
           <label htmlFor="surface-heading">Heading {yaw}° · Estimated</label>
           <input
             id="surface-heading"
@@ -107,7 +121,7 @@ export default function Scene(props: SceneProps) {
             value={yaw}
             onChange={(e) => setYaw(Number(e.target.value))}
           />
-          <span className="mono small">N 0° · E 90° · S 180° · W 270°</span>
+          <span className="mono small">N · E · S · W</span>
         </div>
       )}
       {process.env.NODE_ENV === "development" && (
