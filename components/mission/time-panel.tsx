@@ -64,6 +64,7 @@ export function TimePanel({ mission: m }: { mission: MissionState }) {
         <span>{formatTime(m.config, m.result.hours - 1, true)}</span>
       </div>
       <Track
+        selected={m.result.windows.find(w => w.id === m.selectedWindow)}
         label="Sunlight"
         accent="sun"
         intervals={m.result.solar}
@@ -72,6 +73,7 @@ export function TimePanel({ mission: m }: { mission: MissionState }) {
         onSelect={(v) => jump(v.start)}
       />
       <Track
+        selected={m.result.windows.find(w => w.id === m.selectedWindow)}
         label="Earth link"
         accent="earth"
         intervals={m.result.earth}

@@ -11,8 +11,8 @@ export function ConditionsPanel({mission:m}:{mission:MissionState}) {
   const hours=(intervals:typeof m.result.solar)=>intervals.reduce((n,v)=>n+v.end-v.start,0);
   return <Card className="conditions-panel">
     <div className="countdown-row">
-      <span className="tone-sun">{solar ? `Sun ${solar.kind} in ${solar.hours} h` : 'No further Sun transition in period'}</span>
-      <span className="tone-earth">{earth ? earth.kind==='sets' ? `Earth sets in ${earth.hours} h` : `Next Earth window in ${earth.hours} h` : 'No further Earth transition in period'}</span>
+      <span className="tone-sun">{solar ? solar.kind==='sets'&&m.config.hour+solar.hours===m.result.hours ? `Sun stays up to period end · ${solar.hours} h` : `Sun ${solar.kind} in ${solar.hours} h` : 'No further Sun transition in period'}</span>
+      <span className="tone-earth">{earth ? earth.kind==='sets' ? m.config.hour+earth.hours===m.result.hours ? `Earth visible to period end · ${earth.hours} h` : `Earth sets in ${earth.hours} h` : `Next Earth window in ${earth.hours} h` : 'No further Earth transition in period'}</span>
       <ProvenanceBadge detail="Hourly horizon crossings, bounded by the selected period. A countdown at the period end is a coverage boundary, not necessarily a physical setting." />
     </div>
     <div className="power-stats">

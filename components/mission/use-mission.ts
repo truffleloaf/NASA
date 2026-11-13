@@ -42,6 +42,7 @@ export function useMission(view: string) {
   }, []);
   useEffect(() => {
     const restore = () => {
+      if (location.hash === "#main") return;
       let saved = location.hash;
       if (!saved) { try { saved = sessionStorage.getItem("lunar-settings") || ""; } catch {} }
       if (saved) {

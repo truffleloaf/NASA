@@ -46,7 +46,7 @@ export function DirectionMarker({
           <meshBasicMaterial color={color} />
         </mesh>
         <Html center>
-          <span className={`rim-label tone-${body}`}>{body.toUpperCase()}</span>
+          <span role="img" tabIndex={0} className={`rim-label tone-${body}`} aria-label={`${body} direction marker. Position details below the map.`}>{body === "sun" ? "Sun" : "Earth"}</span>
         </Html>
       </group>
     </>

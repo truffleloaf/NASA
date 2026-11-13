@@ -13,7 +13,7 @@ export default function MissionApp() {
   useEffect(() => {
     const restore = () => {
       const requested = new URLSearchParams(location.search).get("view");
-      setView(requested || (location.hash ? "explorer" : "landing"));
+      setView(requested || (location.hash && location.hash !== "#main" ? "explorer" : "landing"));
     };
     restore();
     window.addEventListener("popstate", restore);
@@ -41,7 +41,7 @@ export default function MissionApp() {
         <a className="brand" href="/" aria-label="Lunar Mission Navigator home">
           <Orbit />
           <span>
-            LUNAR<span className="brand-sub">MISSION NAVIGATOR</span>
+            LUNAR{" "}<span className="brand-sub">MISSION NAVIGATOR</span>
           </span>
         </a>
         <nav aria-label="Introduction">

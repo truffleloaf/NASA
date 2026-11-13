@@ -43,7 +43,7 @@ export function InsightsPanel({ mission: m, onCompare }: { mission: MissionState
         ) : (
           <div className="empty-state">
             <h3>{m.loading ? "Reading local data…" : "No qualifying window"}</h3>
-            <p>{adviceFor(m.result, m.config)}</p>
+            <p>{adviceFor(m.result, m.config, m.siteData)}</p>
             <ProvenanceBadge />
             {!m.loading && <button className="action-outline" onClick={onCompare}>Explore other dates <ArrowUpRight /></button>}
           </div>

@@ -7,10 +7,11 @@ export function ScoreRing({ available, required }: { available: number; required
   return (
     <div
       className="ui-score"
+      role="group"
       aria-label={`${score}% of the planning period in the best window. Estimated, not a safety score.`}
     >
       <svg viewBox="0 0 80 80" aria-hidden="true">
-        <defs><linearGradient id={id}><stop stopColor="var(--sun)" /><stop offset="1" stopColor="var(--ok)" /></linearGradient></defs>
+        <defs><clipPath id={`${id}-reveal`}><rect className="score-sweep" width="80" height="80"/></clipPath><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop stopColor="var(--sun)" /><stop offset="1" stopColor="var(--ok)" /></linearGradient></defs>
         <circle cx="40" cy="40" r="34" fill="none" stroke="var(--surface-3)" strokeWidth="4" />
         <circle
           cx="40"
@@ -18,6 +19,7 @@ export function ScoreRing({ available, required }: { available: number; required
           r="34"
           fill="none"
           stroke={`url(#${id})`}
+          clipPath={`url(#${id}-reveal)`}
           strokeLinecap="round"
           strokeWidth="4"
           strokeDasharray={`${score * 2.136} 213.6`}

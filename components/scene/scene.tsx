@@ -5,6 +5,7 @@ import { PCFShadowMap } from "three";
 import type { MissionState } from "../mission/use-mission";
 import type { LayersState } from "../mission/map-panel";
 import { PolarTerrain } from "./PolarTerrain";
+import { PolarFallback } from "./polar-fallback";
 import { SurfaceView } from "./SurfaceView";
 import { Skeleton } from "../ui/skeleton";
 import header from "@/public/data/terrain/polar-1024.json";
@@ -41,13 +42,14 @@ function ContextLifecycle({ onFallback, description }: { onFallback: () => void;
   return null;
 }
 function FrameMeter({ report }: { report: (text: string) => void }) {
+  const gl = useThree(s=>s.gl);
   const frames = useRef({ count: 0, start: 0 });
   useFrame(() => {
     const now = performance.now();
     if (!frames.current.start) frames.current.start = now;
     frames.current.count++;
     if (now - frames.current.start >= 1000) {
-      report(`${Math.round((frames.current.count * 1000) / (now - frames.current.start))} rendered fps`);
+      report(`${Math.round((frames.current.count * 1000) / (now - frames.current.start))} rendered fps · ${gl.info.memory.geometries} geometries · ${gl.info.memory.textures} textures`);
       frames.current.start = now;
       frames.current.count = 0;
     }
@@ -89,11 +91,11 @@ export default function Scene(props: SceneProps) {
         className="terrain-arrival"
         role="group"
         aria-label={description}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         frameloop={props.mission.playing ? "always" : "demand"}
         shadows={{ type: PCFShadowMap }}
         camera={{ position: [0, 15, 18], fov: 42, near: 0.01, far: 150 }}
-        fallback={<p>WebGL unavailable. Use the 2D accessible map.</p>}
+        fallback={<PolarFallback mission={props.mission} />}
       >
         <color attach="background" args={["#05070C"]} />
         <ContextLifecycle onFallback={props.onFallback} description={description} />

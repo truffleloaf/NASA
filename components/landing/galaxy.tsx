@@ -31,7 +31,7 @@ export default function Galaxy({ atmosphere }: { atmosphere: Atmosphere }) {
       group.current.position.y = atmosphere.pointer.current.y * .06;
     }
   });
-  return <group position={[1.8,.2,-4]} rotation={[.8,-.2,0]}>
+  return <group position={[1.4,.4,-4]} scale={.8} rotation={[.8,-.2,0]}>
     <group ref={group}>
       <points>
         <bufferGeometry>
@@ -41,7 +41,7 @@ export default function Galaxy({ atmosphere }: { atmosphere: Atmosphere }) {
         </bufferGeometry>
         <shaderMaterial ref={material} uniforms={uniforms} transparent depthWrite={false} blending={AdditiveBlending}
           vertexShader={`attribute vec3 color; attribute float phase; varying vec3 tint; varying float alpha; uniform float time; uniform float pixelRatio;
-          void main(){ tint=color; alpha=.5+.5*sin(time*.6+phase); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; gl_PointSize=clamp((2.+sin(phase))*pixelRatio*5./-p.z,1.,4.); }`}
+          void main(){ tint=color; alpha=.5+.5*sin(time*.6+phase); vec4 p=modelViewMatrix*vec4(position,1.); gl_Position=projectionMatrix*p; gl_PointSize=clamp((3.+sin(phase))*pixelRatio*14./-p.z,1.4,6.); }`}
           fragmentShader={`varying vec3 tint; varying float alpha; void main(){float d=length(gl_PointCoord-.5); if(d>.5)discard; gl_FragColor=vec4(tint,(1.-smoothstep(.08,.5,d))*(.35+alpha*.5));}`} />
       </points>
     </group>

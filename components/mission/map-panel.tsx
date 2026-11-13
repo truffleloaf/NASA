@@ -144,9 +144,9 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
           </label>
         )}
       </div>
-      <div className="terrain-legend"><span className={`layer-ramp ${layers.style}`} />{layers.style === 'slope' ? 'Slope · 0–45°' : layers.style === 'elevation' ? 'Elevation · −7.3 to +7.0 km' : layers.style === 'lit' ? 'Shadow → sunlit · selected hour' : 'Hillshade · photographic albedo'} <ProvenanceBadge kind={layers.style === 'hillshade' ? 'Illustrative' : 'Computed'} detail="Slope and elevation are derived from the bundled 594 m DEM. Lit-now uses that mesh and the JPL Sun direction; coarse render shadows are not the horizon model used for planning." /></div>
+      {mode === "polar" ? <div className="terrain-legend"><span className={`layer-ramp ${layers.style}`} />{layers.style === 'slope' ? 'Slope · 0–45°' : layers.style === 'elevation' ? 'Elevation · −7.3 to +7.0 km' : layers.style === 'lit' ? 'Shadow → sunlit · selected hour' : 'Hillshade · photographic albedo'} <ProvenanceBadge kind={layers.style === 'hillshade' ? 'Illustrative' : 'Computed'} detail="Slope and elevation are derived from the bundled 594 m DEM. Lit-now uses that mesh and the JPL Sun direction; coarse render shadows are not the horizon model used for planning." /></div> : <p className="terrain-legend">Sky paths across the planning period · ticks mark sampled rise/set transitions <ProvenanceBadge kind="Computed" detail="Paths use bundled JPL angles. Horizon crossings remain Estimated from hourly terrain clearance." /></p>}
       {reading && <div className="terrain-inspection"><strong>{coordinates(reading.lat,reading.lon)}</strong><span>{reading.elevation.toFixed(0)} m · {reading.slope.toFixed(1)}° slope</span><ProvenanceBadge kind="Computed" detail="Bilinear DEM elevation; slope from adjacent 594 m samples. Not a local landing-hazard assessment." /><button className="action-quiet" onClick={()=>setReading(null)}>Dismiss</button></div>}
-      <div className="map-status" aria-label={summary}>
+      <div className="map-status" role="group" aria-label={summary}>
         <div className="tone-sun">
           <Sun />
           <span>

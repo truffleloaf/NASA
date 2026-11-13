@@ -1,48 +1,91 @@
-# Atmosphere and motion verification
+# Visual upgrade and verification — 13 November 2026
 
-This pass changes presentation only. Mission calculations, sharing/state logic, bundled
-datasets are unchanged from local commit `920ec20`. The final integration also preserves
-the newer main-branch provenance, metadata and offline reproducibility-check updates.
+## Scope and phases
+
+This pass starts at `503e0ed`. The science engine, share codec, `public/data/`,
+`scripts/`, and `docs/DATA.md` are unchanged. GitHub integration is based on newer
+main `7fad9fd`, preserving its backend pipeline and documentation.
+
+0. Valid starting window; guarded restoration, debounced URL updates, scoped keyboard
+   controls, date validation, useful empty-state advice, selection and provenance popovers.
+1. Bundled Geist / Geist Mono, semantic night palette, quieter labels, flat cards,
+   amber actions, numeric transitions, gradient tracks and interactive horizon chart.
+2. One lazy R3F canvas for the Moon and 14,000-particle galaxy (6,000 on mobile),
+   restrained parallax, rare shooting stars, entrance and south-pole dive transition.
+3. Bundled NASA albedo/displacement and Earth imagery; illustrative lunar response,
+   earthshine, libration, a selected-site marker and Earth sight line. See ASSETS.md.
+4. Actual LOLA terrain with slope/elevation/lit-now layers, terrain inspection,
+   site fly-to, tour, orbit/reset controls and surface sky paths. Shadow maps use a
+   tight frustum; updates are capped at 15 Hz while the light eases between samples.
+5. Power/comms/overlap summaries, countdowns, date presets, local + UTC time,
+   two-site/two-period comparison, Guided/Expert controls and honest coordinate coverage.
+6. Mobile overflow fixes, accessible canvas/popovers, reduced-motion fallbacks,
+   refreshed screenshots, final checks and the measurements below.
 
 ## Measurements
 
-- Explorer development meter: **60 rendered fps** in two visible, unthrottled playback samples on this computer. This is not a cross-device benchmark.
-- Landing initial JavaScript: **228,821 bytes gzip** including legacy polyfills; **189,194 bytes** excluding those polyfills. The lazy Moon dependency group is **253,343 bytes gzip**, including shared Three.js dependencies; its own component chunk is **2,214 bytes**.
-- Standalone Galaxy bundle with React external: **1,965 bytes gzip**.
-- Conservative copy contrast: **6.68:1** for muted text. The calculation allows white decorative pixels at the maximum combined copy-area opacity (0.32 × 0.2), which is brighter than the actual palette. Stars and streaks are excluded from the copy rectangle.
-- Browser inspection at 390 px: document width equals viewport width; no horizontal overflow. Moon, marker and Earth line remain connected. On mobile, the site label sits near/below the first viewport fold; the full composition is in the full-height captures.
+- Initial JavaScript: **231,005 bytes gzip**, including legacy polyfills, before the
+  lazy 3D chunks. Below the 250 kB budget. Sum of gzip sizes of index.html script assets.
+- Conservative muted-text contrast over the protected hero copy area: **6.46:1**.
+- Three-site mast recalculation: **0.58 ms p95** in the bundled benchmark (default
+  seven-day period). This is computation only, not end-to-end browser paint time.
+- Explorer playback: **22 rendered fps** in the visible desktop in-app browser,
+  development build, 1440×900, 24 h/s. Before shadow refresh throttling: 20 fps.
+  **The 55/60 fps acceptance target has not been met in this environment.** This is
+  neither a representative mid-range laptop benchmark nor a production FPS guarantee.
+- That playback sample reported 7 geometries and 4 textures. Twenty consecutive
+  Polar/Surface switches completed without observed context-loss errors. This checks
+  stability; it is not a full GPU memory-leak proof. Resources dispose on unmount.
+- Terrain DPR is capped at 1.5; landing DPR at 2. Terrain pauses on demand and ambient
+  landing animation pauses offscreen. CPU relief preparation yields in short batches.
 
-Chrome Lighthouse local-production captures used 4× CPU throttling, 1440×900 and 390×844 viewports, and DPR 1. These are one-run observations, not guarantees:
+Chrome Lighthouse on the local static production build, 4× CPU throttling,
+DPR 1, desktop preset with 1440×900 or 390×844 screen emulation. Single-run observations:
 
-| Mode | Performance | Accessibility | Best practices | CLS |
+| Screen | Performance | Accessibility | Best practices | CLS |
 | --- | ---: | ---: | ---: | ---: |
-| Desktop, motion | 74 | 95 | 96 | 0 |
-| Desktop, reduced motion | 81 | 95 | 96 | 0 |
-| Mobile, motion | 91 | 95 | 96 | 0 |
-| Mobile, reduced motion | 99 | 95 | 96 | 0 |
+| landing-1440 | 84 | 100 | 100 | 0.000 |
+| landing-390 | 84 | 100 | 100 | 0.000 |
+| landing-390-reduced | 100 | 100 | 100 | 0.000 |
+| explorer-1440 | 70 | 100 | 100 | 0.008 |
+| explorer-390 | 72 | 100 | 100 | 0.000 |
+| compare-1440 | 100 | 100 | 100 | 0.043 |
+| compare-390 | 99 | 100 | 100 | 0.000 |
 
-Startup tasks reached 241 ms on desktop and 113 ms on mobile. All reported long tasks
-finished within 2.4 seconds; none above 50 ms occurred afterward through the roughly
-12-second traces. Thus startup performance remains below the earlier desktop score
-target of 85, although steady animation met the sampled long-task target. Reduced-motion
-captures are static, with the same content and composition. Screenshots are in `docs/screens/`.
+Accessibility and best-practices targets pass for these audited views. Motion-enabled
+landing (84) and Explorer (70/72) miss the performance target of 85. Explorer startup
+includes main-thread Three.js/shader/geometry work; the two largest observed tasks were
+495 ms and 466 ms under 4× throttling. Compare reaches 99–100. Do not describe this pass
+as having passed every performance requirement. Reduced-motion landing is static and
+scores 100; it retains the same content and provenance.
 
-The quality gate is typecheck, 12 unit tests, and static production build. Full keyboard
-flow, 20 consecutive WebGL switches, and representative mid-range hardware were not
-retested in this visual-only pass. No new dependency was added.
+## Verification evidence
 
-## Implementation decisions not fixed by the brief
+- `npm run typecheck`, all **18 tests**, and `npm run build` pass.
+- New tests cover starting-window validity, malformed dates/restoration, signed
+  coordinates, countdown boundaries, texture coordinates and inverse polar projection.
+- Browser-checked: mobile comparison document width 390 at viewport 390; mobile
+  Explorer and landing composition; two-period differences; window selection jumps to
+  its start and marks the track; provenance popover; expert controls; printable brief
+  including west longitude; browser Back restores Explorer.
+- Unit tests verify exact share round-trips and CSV provenance. The in-app clipboard
+  did not return copied text during QA, so native clipboard delivery is not certified.
+- Date validation is covered by unit tests and source inspection. Browser automation
+  of native date inputs did not reliably dispatch React changes; do not count that as
+  a completed keyboard-only flow. An exhaustive keyboard/screen-reader pass remains.
+- Screens in `docs/screens/` are final production Lighthouse captures, cropped to
+  1440×900 / 390×844, with an additional full-height mobile landing capture.
 
-1. Fixed random seeds (301 and 441) keep the sky reproducible; mobile rounds the 40% reduction to 161 total stars. Streaks use a 34-second cycle with seeded 25–40-second phase offsets.
-2. The offscreen nebula raster is 700 px and enlarged by CSS. Copy protection includes a 12 px safety margin and a 20% left-side mask, stricter than the requested 25% ceiling.
-3. The lazy Moon waits 700 ms, then uses an idle callback with a 1,500 ms timeout. A CSS Moon fills the space during loading, Save Data and WebGL failure.
-4. The Moon uses an orthographic camera with a 3.08-unit span. Composition frames are 900/760/480 px across breakpoints; the mobile hero reserves 1,030 px for copy and the scene. Earth’s drift is horizontal.
-5. The selected-site pulse lasts 600 ms in a two-second cycle. A stable HTML portal anchors the occluded label; only the lunar mesh occludes it. The sight line renders over the sphere so its illustrative connection stays readable.
-6. Explorer reuses the existing 259-point star field at 0.45 opacity. Direction markers use frame-rate-independent damping with rate 12; scientific lighting and positions remain unchanged.
-7. Local installed font files load through Next’s font preloader. This avoids external font requests and eliminated the layout shifts seen with CSS font imports. Header action widths are reserved.
-8. Stat values crossfade literally; score rings, tracks and short list/sheet transitions use CSS where sufficient. View transitions use the existing Motion dependency. Reduced motion and print remove decorative animation.
-9. The FPS meter counts frames against monotonic wall time instead of the render clock, making paused/demand rendering measurements meaningful. A paused canvas is not expected to report 60 fps.
-10. Screenshot capture uses Lighthouse’s full-page image, cropped to the requested viewport dimensions, with additional full-height mobile captures. The audit harness lives outside the application repo.
-11. The existing autogenerated Next development guidance is retained in AGENTS.md. Unrelated legacy styles remain untouched because this request is limited to atmosphere and polish.
-12. GitHub’s previously truncated terrain binary is restored byte-for-byte from the unchanged local file in a separate repair commit; no terrain data is regenerated or altered.
-13. Main advanced during upload. Its provenance corrections are carried into the extracted hero and header; its metadata, methods, README and offline reproducibility check are preserved. Screenshots and Lighthouse figures above were captured immediately before this integration (the summary badge then said Computed; the final badge says Estimated).
+## Deliberate limits
+
+- Dark terrain is shadowed at the selected time. **Permanent** shadow classification
+  needs long-term illumination data and is not inferred from a picture.
+- Photo albedo, ambient occlusion, exaggerated relief, galaxy, landing positions and
+  accelerated libration are visual approximations. Scientific values keep their own
+  Computed/Estimated badges; presentation never changes the engine results.
+- Terrain is a 256-subdivision rendering of the bundled 1024 DEM, not a landing hazard
+  model. No extra procedural crater noise is presented as terrain measurement.
+- Site previews use the real horizon silhouette rather than additional mini canvases.
+- Arbitrary-coordinate visibility and Apollo/CLPS coverage require new data; see BACKLOG.md.
+- No new external runtime requests. All fonts and imagery are bundled. No backend
+  pipeline changes are part of this visual update.

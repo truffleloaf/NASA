@@ -1,5 +1,6 @@
 "use client";
 import { Printer, Download, Link as LinkIcon } from "lucide-react";
+import { coordinates } from "@/lib/planning";
 import { formatTime } from "@/lib/science";
 import type { MissionState } from "./use-mission";
 import { Card } from "../ui/card";
@@ -45,7 +46,7 @@ export function BriefView({ mission: m }: { mission: MissionState }) {
           {m.config.start} — {m.config.end} · UTC
         </p>
         <p>
-          {Math.abs(m.selected.lat)}° S, {m.selected.lon}° E · Representative coordinate, not a certified landing site.
+          {coordinates(m.selected.lat,m.selected.lon)} · Representative coordinate, not a certified landing site.
         </p>
         <h3>
           Planning assumptions <ProvenanceBadge />

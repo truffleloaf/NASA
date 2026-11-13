@@ -15,7 +15,7 @@ import {
   LineDashedMaterial,
   Mesh,
   MeshBasicMaterial,
-  MeshStandardMaterial,
+  MeshPhongMaterial,
   SRGBColorSpace,
   TextureLoader,
   Vector3,
@@ -50,8 +50,8 @@ function MoonModel({
     marker = useRef<Mesh>(null),
     earth = useRef<Mesh>(null),
     pulse = useRef<Mesh>(null),
-    material = useRef<MeshStandardMaterial>(null);
-  const { gl, camera, size, viewport, invalidate } = useThree();
+    material = useRef<MeshPhongMaterial>(null);
+  const { gl, scene, camera, size, viewport, invalidate } = useThree();
   const elapsed = useRef(0),
     ready = useRef(false);
   useEffect(() => {
@@ -83,9 +83,10 @@ function MoonModel({
     const done = () => {
       if (cancelled) return;
       if (++loaded === 2) {
-        ready.current = true;
-        onReady();
-        invalidate();
+        void gl.compileAsync(scene, camera).then(() => {
+          if (cancelled) return;
+          ready.current = true; onReady(); invalidate();
+        }).catch(failed);
       }
     };
     const failed = () => {
@@ -120,7 +121,7 @@ function MoonModel({
     group.current.rotation.y +=
       ((atmosphere.reduced ? 0 : atmosphere.pointer.current.x * 0.02618) - group.current.rotation.y) *
       (atmosphere.reduced ? 1 : 0.05);
-    earth.current.position.set(viewport.width * (atmosphere.mobile ? .24 : .34), viewport.height * (atmosphere.mobile ? .03 : .27), 0);
+    earth.current.position.set(viewport.width * (atmosphere.mobile ? .24 : .26), viewport.height * (atmosphere.mobile ? .03 : .18), 2.4);
     const phase = elapsed.current % 2,
       progress = Math.min(1, phase / 0.6);
     pulse.current.scale.setScalar(1 + (1 - (1 - progress) ** 3) * 1.5);
@@ -142,16 +143,17 @@ function MoonModel({
       <ambientLight intensity={0.012} />
       <hemisphereLight args={["#DDE3EE", "#05060A", 0.018]} />
       <directionalLight position={[-3, 2, 1.2]} intensity={2.5} />
-      <group ref={group} position={[viewport.width * (atmosphere.mobile ? .11 : .26), viewport.height * (atmosphere.mobile ? -.12 : .04), 0]} scale={atmosphere.mobile ? viewport.width * .68 : viewport.height * .46}>
+      <group ref={group} position={[viewport.width * (atmosphere.mobile ? .11 : .26), viewport.height * (atmosphere.mobile ? -.12 : .04), 0]} scale={atmosphere.mobile ? viewport.width * .68 : viewport.height * .32}>
         <group rotation-x={-0.9}>
           <mesh ref={sphere}>
-            <sphereGeometry args={[1, 192, 128]} />
-            <meshStandardMaterial
+            <sphereGeometry args={[1, 128, 96]} />
+            <meshPhongMaterial
               ref={material}
               bumpScale={0.06}
               displacementScale={0.012}
               displacementBias={-0.006}
-              roughness={1}
+              shininess={0}
+              specular="#000000"
               onBeforeCompile={(shader) => {
                 shader.fragmentShader = shader.fragmentShader.replace(
                   "#include <map_fragment>",
@@ -194,7 +196,7 @@ function MoonModel({
       </group>
       <primitive object={line} />
       <mesh ref={earth} position={[atmosphere.mobile ? 0.36 : 0.9, atmosphere.mobile ? 1.15 : 0.95, 0]}>
-        <sphereGeometry args={[.075, 32, 24]} />
+        <sphereGeometry args={[.045, 32, 24]} />
         <EarthMaterial />
         <Glow color="#5CC8FF" scale={.26} />
         <Html portal={portal} center position={[0, 0.09, 0]} style={{ pointerEvents: "none" }}>
@@ -231,7 +233,7 @@ function MoonCanvas({ atmosphere, diving }: { atmosphere: Atmosphere; diving: bo
           gl={{ alpha: true, antialias: true }}
           dpr={[1, atmosphere.mobile ? 1.5 : 2]}
           camera={{ position: [0, 0, 6], fov:40, near: 0.1, far: 80 }}
-          frameloop={atmosphere.active && !atmosphere.reduced ? "always" : "demand"}
+          frameloop={!ready ? "never" : atmosphere.active && !atmosphere.reduced ? "always" : "demand"}
           onCreated={({ gl }) => {
             gl.setClearColor(0, 0);
             gl.toneMapping = ACESFilmicToneMapping;

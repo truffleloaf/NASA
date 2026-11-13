@@ -27,7 +27,7 @@ export function StatTile({
         {icon}
         {label}
       </span>
-      <div className="stat-number" aria-label={`${value ?? "Unavailable"} ${value !== null ? (unit ?? "") : ""}`}>
+      <div className="stat-number" role="group" aria-label={`${value ?? "Unavailable"} ${value !== null ? (unit ?? "") : ""}`}>
         <AnimatePresence initial={false}>
           <motion.span
             aria-hidden="true"

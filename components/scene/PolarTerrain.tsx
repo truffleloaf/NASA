@@ -26,7 +26,7 @@ export function PolarTerrain({
   reset,
   onTerrain,
 }: SceneProps & { heights: Uint16Array }) {
-  const { camera, invalidate } = useThree(),
+  const { camera, invalidate, gl } = useThree(),
     controls = useRef<Controls>(null),
     markers = useRef<InstancedMesh>(null);
   const colorMap = useTexture("/moon-color-4k.webp");
@@ -36,19 +36,28 @@ export function PolarTerrain({
   const [hovered,setHovered] = useState<number | null>(null);
   const lamp = useRef<DirectionalLight>(null), lightTarget = useMemo(()=>new Object3D(),[]);
   const heightAt = (x:number,z:number) => ((elevationAt(heights,x*SCALE,z*SCALE)??0)/1000/SCALE)*exaggeration;
-  const relief = useMemo(() => {
-    const values = [];
-    for(let row=0;row<=256;row++) for(let col=0;col<=256;col++) {
-      const x=(col/256-.5)*608,z=(row/256-.5)*608;
-      const value=terrainAt(heights,x,z);
-      const h=value?.elevation??0;
-      let cavity=0;
-      for(const [dx,dz] of [[2,0],[-2,0],[0,2],[0,-2]]) cavity+=Math.max(0,(elevationAt(heights,x+dx,z+dz)??h)-h);
-      values.push({h,slope:value?.slope??0,ao:Math.max(.45,1-cavity/6000)});
-    }
-    return values;
-  }, [heights]);
+  const [relief,setRelief] = useState<{h:number;slope:number;ao:number}[]>([]);
+  useEffect(() => {
+    let cancelled=false, timer=0, index=0;
+    const values:{h:number;slope:number;ao:number}[]=[];
+    const work=()=>{
+      const deadline=performance.now()+8;
+      while(index<257*257 && performance.now()<deadline) {
+        const row=Math.floor(index/257),col=index%257;
+        const x=(col/256-.5)*608,z=(row/256-.5)*608;
+        const value=terrainAt(heights,x,z),h=value?.elevation??0;
+        let cavity=0;
+        for(const [dx,dz] of [[2,0],[-2,0],[0,2],[0,-2]]) cavity+=Math.max(0,(elevationAt(heights,x+dx,z+dz)??h)-h);
+        values.push({h,slope:value?.slope??0,ao:Math.max(.45,1-cavity/6000)});index++;
+      }
+      if(cancelled)return;
+      if(index<257*257)timer=window.setTimeout(work,0);else {setRelief(values);invalidate();}
+    };
+    timer=window.setTimeout(work,0);
+    return ()=>{cancelled=true;clearTimeout(timer);};
+  },[heights,invalidate]);
   const geometry = useMemo(() => {
+    if(!relief.length)return new BufferGeometry();
     const size = 256,
       positions: number[] = [],
       uvs: number[] = [],
@@ -103,6 +112,9 @@ export function PolarTerrain({
     invalidate();
   }, [m.config.site, exaggeration]);
   const fly = useRef<{ start: number; from: Vector3; fromTarget: Vector3; target: Vector3; position: Vector3 } | null>(null);
+  const lastShadow = useRef(0);
+  useEffect(()=>{gl.shadowMap.autoUpdate=false;return ()=>{gl.shadowMap.autoUpdate=true;};},[gl]);
+  useEffect(()=>{gl.shadowMap.needsUpdate=true;invalidate();},[gl,relief,exaggeration,layers.shadows,layers.style,invalidate]);
   const lastReset = useRef(reset);
   useEffect(() => {
     const overview = reset !== lastReset.current;
@@ -119,9 +131,13 @@ export function PolarTerrain({
   useFrame(() => {
     if (lamp.current) {
       const desired=sun.clone().add(selected);
+      const moving=lamp.current.position.distanceTo(desired)>.001 || lightTarget.position.distanceTo(selected)>.001;
       lamp.current.position.lerp(desired,m.reduced ? 1 : .18);
       lightTarget.position.copy(selected); lightTarget.updateMatrixWorld();
-      if(lamp.current.position.distanceTo(desired)>.001) invalidate();
+      const remaining=lamp.current.position.distanceTo(desired);
+      // Shadow-map refreshes are capped; camera and marker motion keep full frame rate.
+      if(moving && (performance.now()-lastShadow.current>66 || remaining<=.001)) {gl.shadowMap.needsUpdate=true;lastShadow.current=performance.now();}
+      if(remaining>.001) invalidate();
     }
     if (!fly.current) return;
     const t = Math.min(1, (performance.now() - fly.current.start) / 600),
@@ -143,6 +159,7 @@ export function PolarTerrain({
   return (
     <>
       <Stars />
+      {!relief.length && <Html center><span className="terrain-label">Shaping terrain…</span></Html>}
       <fog attach="fog" args={["#05070C",22,48]} />
       <ambientLight intensity={layers.style === "slope" || layers.style === "elevation" ? 1.5 : .075} />
       <primitive object={lightTarget} />
@@ -180,7 +197,7 @@ export function PolarTerrain({
       </instancedMesh>
       {layers.labels &&
         points.map((point, i) => (
-          <Html key={SITES[i].id} position={point} center distanceFactor={25} zIndexRange={[8, 0]}>
+          <Html key={SITES[i].id} position={point} center zIndexRange={[8, 0]}>
             <button
               className={`terrain-label ${i === selectedIndex ? "selected" : ""}`}
               onFocus={()=>setHovered(i)} onBlur={()=>setHovered(null)} onPointerEnter={()=>setHovered(i)} onPointerLeave={()=>setHovered(null)}

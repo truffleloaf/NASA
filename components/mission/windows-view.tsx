@@ -28,7 +28,7 @@ export function WindowsView({ mission: m, onExplore }: { mission: MissionState; 
       {!m.result.windows.length ? (
         <Card className="empty-state">
           <h2>No qualifying windows</h2>
-          <p>{adviceFor(m.result, m.config)}</p>
+          <p>{adviceFor(m.result, m.config, m.siteData)}</p>
           <ProvenanceBadge />
           <button className="action-outline" onClick={onExplore}>
             Adjust mission limits

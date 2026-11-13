@@ -81,7 +81,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
         <button className="brand" onClick={onHome} aria-label="Lunar Mission Navigator home">
           <Orbit />
           <span>
-            LUNAR<span className="brand-sub">MISSION NAVIGATOR</span>
+            LUNAR{" "}<span className="brand-sub">MISSION NAVIGATOR</span>
           </span>
         </button>
         <Segmented
@@ -102,7 +102,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
           {m.expert && <button className="icon-control" onClick={m.copyLink} aria-label="Copy mission share link">
             <LinkIcon />
           </button>}
-          <button className="action-outline" onClick={() => changeView("brief")}>
+          <button className="action-outline" aria-label="Export brief" onClick={() => changeView("brief")}>
             <FileDown />
             <span>Export brief</span>
           </button>
@@ -218,7 +218,7 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
         description="A short introduction to Lunar Mission Navigator."
       >
         <p className="tour-copy">{steps[tour]?.text}</p>
-        <div className="tour-dots" aria-label={`Introduction step ${tour + 1} of ${steps.length}`}>
+        <div className="tour-dots" role="group" aria-label={`Introduction step ${tour + 1} of ${steps.length}`}>
           {steps.map((_, i) => (
             <i key={i} className={i === tour ? "active" : ""} />
           ))}
