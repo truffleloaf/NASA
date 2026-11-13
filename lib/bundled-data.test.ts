@@ -33,5 +33,5 @@ test("mast recalculation stays under 50 ms for the default planning period", () 
   }
   times.sort((a, b) => a - b);
   assert.ok(times[18] < 50, `95th percentile ${times[18].toFixed(2)} ms`);
-  console.log(`Bundled three-site mast recalculation p95: ${times[18].toFixed(2)} ms`);
+  console.log(`Bundled six-site mast recalculation p95: ${times[18].toFixed(2)} ms`);
 });

@@ -1,5 +1,30 @@
-export type Provenance = "Computed" | "Illustrative" | "Estimated";
-export type SiteId = "shackleton" | "malapert" | "de-gerlache";
+import type { Ephemeris, HorizonData, Site, SiteId } from "./data-types";
+export type {
+  Ephemeris,
+  EphemerisRow,
+  HorizonData,
+  Manifest,
+  Provenance,
+  Site,
+  SiteId,
+  TerrainHeader,
+  TerrainSource,
+  ValidationEvent,
+  ValidationReport,
+  ValidationRow,
+} from "./data-types";
+export type SiteData = { site: Site; ephemeris: Ephemeris; horizon: HorizonData };
+/** The analysis only needs the series and the skyline, not the provenance metadata. */
+export type EphemerisSeries = Pick<Ephemeris, "start" | "stepHours" | "rows">;
+export type HorizonProfile = Pick<
+  HorizonData,
+  "azimuthStepDegrees" | "mastHeightsMeters" | "profiles"
+>;
+export type AnalysisInput = {
+  site: Pick<Site, "id">;
+  ephemeris: EphemerisSeries;
+  horizon: HorizonProfile;
+};
 export type MissionConfig = {
   site: SiteId;
   start: string;
@@ -10,26 +35,6 @@ export type MissionConfig = {
   mast: number;
   hour: number;
 };
-export type EphemerisRow = [number, number, number, number, number, number];
-export type Ephemeris = { start: string; stepHours: number; rows: EphemerisRow[]; source?: unknown };
-export type HorizonData = {
-  azimuthStepDegrees: number;
-  mastHeightsMeters: number[];
-  profiles: Record<string, number[]>;
-  provenance: "Estimated";
-  source?: unknown;
-};
-export type Site = {
-  id: SiteId;
-  name: string;
-  lat: number;
-  lon: number;
-  elevationMeters?: number;
-  ephemeris: string;
-  horizon: string;
-};
-export type SiteData = { site: Site; ephemeris: Ephemeris; horizon: HorizonData };
-export type Manifest = { sites: Site[]; [key: string]: unknown };
 export type Interval = { start: number; end: number };
 export type OperatingWindow = Interval & { id: string; uptime: number; blackout: number; why: string };
 export type Sample = {
@@ -68,7 +73,14 @@ export const DEFAULT_CONFIG: MissionConfig = {
   hour: 12,
 };
 export const HOUR = 3_600_000;
-export const SITE_IDS: SiteId[] = ["shackleton", "malapert", "de-gerlache"];
+export const SITE_IDS: SiteId[] = [
+  "shackleton",
+  "malapert",
+  "de-gerlache",
+  "mons-mouton",
+  "nobile-rim-1",
+  "haworth",
+];
 export function dateMs(value: string): number {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
   const ms = Date.parse(value + "T00:00:00Z");
@@ -78,7 +90,7 @@ export function hoursInPeriod(start: string, end: string): number {
   const hours = (dateMs(end) - dateMs(start)) / HOUR + 24;
   return Number.isFinite(hours) && hours > 0 && hours <= 366 * 24 ? hours : 0;
 }
-export function horizonAt(data: HorizonData, azimuth: number, mast: number): number {
+export function horizonAt(data: HorizonProfile, azimuth: number, mast: number): number {
   const heights = data.mastHeightsMeters;
   const lo = heights[0],
     hi = heights.at(-1)!;
@@ -92,7 +104,7 @@ export function horizonAt(data: HorizonData, azimuth: number, mast: number): num
     b = at(data.profiles[String(hi)]);
   return a + (b - a) * Math.max(0, Math.min(1, (mast - lo) / (hi - lo || 1)));
 }
-export function sampleAt(data: SiteData | undefined, timeMs: number, mast: number): Sample | null {
+export function sampleAt(data: AnalysisInput | undefined, timeMs: number, mast: number): Sample | null {
   if (!data) return null;
   const index = Math.floor((timeMs - Date.parse(data.ephemeris.start)) / HOUR / data.ephemeris.stepHours);
   const row = data.ephemeris.rows[index];
@@ -140,7 +152,7 @@ function empty(status: Analysis["status"], reason: string, hours = 0): Analysis 
     dailyHours: [],
   };
 }
-export function analyzeSite(data: SiteData | undefined, config: MissionConfig): Analysis {
+export function analyzeSite(data: AnalysisInput | undefined, config: MissionConfig): Analysis {
   const hours = hoursInPeriod(config.start, config.end),
     startMs = dateMs(config.start);
   if (!hours) return empty("invalid", "Choose a valid date range of up to one year.");

@@ -1,19 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzeSite, DEFAULT_CONFIG, horizonAt, hoursInPeriod, type SiteData } from "./science";
+import { analyzeSite, DEFAULT_CONFIG, horizonAt, hoursInPeriod, type AnalysisInput, type EphemerisRow } from "./science";
 import { decodeConfig, encodeConfig, windowsCSV } from "./share";
-const fixture: SiteData = {
-  site: { id: "shackleton", name: "Test fixture", lat: -89, lon: 0, ephemeris: "", horizon: "" },
+const fixture: AnalysisInput = {
+  site: { id: "shackleton" },
   ephemeris: {
     start: "2026-11-07T00:00:00Z",
     stepHours: 1,
-    rows: Array.from({ length: 168 }, (_, i) => [0, i < 48 ? 5 : -5, 0.5, 0, i === 20 ? 0 : 5, 2]),
+    rows: Array.from(
+      { length: 168 },
+      (_, i): EphemerisRow => [0, i < 48 ? 5 : -5, 0.5, 0, i === 20 ? 0 : 5, 2],
+    ),
   },
   horizon: {
-    azimuthStepDegrees: 90,
+    azimuthStepDegrees: 1,
     mastHeightsMeters: [2, 20],
-    profiles: { "2": [1, 1, 1, 1], "20": [-1, -1, -1, -1] },
-    provenance: "Estimated",
+    profiles: { "2": Array(360).fill(1), "20": Array(360).fill(-1) },
   },
 };
 test("missing data never becomes a fabricated zero", () => {
