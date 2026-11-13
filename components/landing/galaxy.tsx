@@ -27,8 +27,8 @@ export default function Galaxy({ atmosphere }: { atmosphere: Atmosphere }) {
     uniforms.time.value += Math.min(dt, .05);
     if (group.current) {
       group.current.rotation.z = uniforms.time.value * Math.PI * 2 / 240;
-      group.current.position.x = 1.8 + atmosphere.pointer.current.x * .06;
-      group.current.position.y = .2 + atmosphere.pointer.current.y * .06;
+      group.current.position.x = atmosphere.pointer.current.x * .06;
+      group.current.position.y = atmosphere.pointer.current.y * .06;
     }
   });
   return <group position={[1.8,.2,-4]} rotation={[.8,-.2,0]}>

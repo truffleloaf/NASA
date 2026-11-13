@@ -2,15 +2,17 @@
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import Galaxy from "./galaxy";
-import { Html } from "@react-three/drei";
+import { Stars } from "../scene/stars";
+import { Html, useTexture } from "@react-three/drei";
 import {
   BufferAttribute,
   ACESFilmicToneMapping,
   BufferGeometry,
   DoubleSide,
+  Color,
   Group,
   Line,
-  LineBasicMaterial,
+  LineDashedMaterial,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -59,10 +61,10 @@ function MoonModel({
   }, [gl, onError]);
   const line = useMemo(() => {
     const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(new Float32Array(6), 3));
+    geometry.setAttribute("position", new BufferAttribute(new Float32Array(99), 3));
     return new Line(
       geometry,
-      new LineBasicMaterial({ color: "#5CC8FF", transparent: true, opacity: 0, depthTest: false }),
+      new LineDashedMaterial({ dashSize:.07, gapSize:.05, color: "#5CC8FF", transparent: true, opacity: 0, depthTest: false }),
     );
   }, []);
   const pole = useMemo(() => new Vector3(), []),
@@ -89,8 +91,8 @@ function MoonModel({
     const failed = () => {
       if (!cancelled) onError();
     };
-    const map = loader.load(atmosphere.mobile ? "/moon-color.jpg" : "/moon-color-4k.webp", done, undefined, failed),
-      bump = loader.load("/moon-relief.webp", done, undefined, failed);
+    const map = loader.load("/moon-albedo.webp", done, undefined, failed),
+      bump = loader.load("/moon-displacement.webp", done, undefined, failed);
     map.colorSpace = SRGBColorSpace;
     map.anisotropy = bump.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
     if (material.current) {
@@ -111,16 +113,14 @@ function MoonModel({
     camera.position.x += ((diving ? viewport.width * .26 : 0) - camera.position.x) * .085;
     const moving = atmosphere.active && !atmosphere.reduced;
     if (moving && ready.current) elapsed.current += Math.min(delta, 0.05);
-    sphere.current.rotation.y = -Math.PI / 2 + (atmosphere.reduced ? 0 : elapsed.current * 0.012);
+    sphere.current.rotation.y = -Math.PI / 2 + Math.sin(elapsed.current * Math.PI * 2 / 30) * 7 * Math.PI / 180;
     group.current.rotation.x +=
-      ((atmosphere.reduced ? 0 : atmosphere.pointer.current.y * 0.02618) - group.current.rotation.x) *
+      ((atmosphere.reduced ? 0 : atmosphere.pointer.current.y * 0.02618 + Math.sin(elapsed.current * Math.PI * 2 / 30) * 6.7 * Math.PI / 180) - group.current.rotation.x) *
       (atmosphere.reduced ? 1 : 0.05);
     group.current.rotation.y +=
       ((atmosphere.reduced ? 0 : atmosphere.pointer.current.x * 0.02618) - group.current.rotation.y) *
       (atmosphere.reduced ? 1 : 0.05);
-    earth.current.position.x =
-      (atmosphere.mobile ? 0.36 : 0.9) +
-      (atmosphere.reduced ? 0 : (Math.sin((elapsed.current * Math.PI * 2) / 90) * 6 * 3.08) / size.width);
+    earth.current.position.set(viewport.width * (atmosphere.mobile ? .24 : .34), viewport.height * (atmosphere.mobile ? .03 : .27), 0);
     const phase = elapsed.current % 2,
       progress = Math.min(1, phase / 0.6);
     pulse.current.scale.setScalar(1 + (1 - (1 - progress) ** 3) * 1.5);
@@ -128,8 +128,9 @@ function MoonModel({
     marker.current.getWorldPosition(pole);
     earth.current.getWorldPosition(endpoint);
     const positions = line.geometry.attributes.position as BufferAttribute;
-    positions.setXYZ(0, pole.x, pole.y, pole.z);
-    positions.setXYZ(1, endpoint.x, endpoint.y, endpoint.z);
+    for (let i=0;i<=32;i++) { const t=i/32; positions.setXYZ(i, pole.x+(endpoint.x-pole.x)*t+Math.sin(t*Math.PI)*.28, pole.y+(endpoint.y-pole.y)*t, pole.z+(endpoint.z-pole.z)*t); }
+    line.computeLineDistances();
+    line.material.dashSize = .07 + Math.sin(elapsed.current)*.004;
     positions.needsUpdate = true;
     line.geometry.computeBoundingSphere();
     line.material.opacity = atmosphere.reduced
@@ -147,7 +148,7 @@ function MoonModel({
             <sphereGeometry args={[1, 192, 128]} />
             <meshStandardMaterial
               ref={material}
-              bumpScale={0.025}
+              bumpScale={0.06}
               displacementScale={0.012}
               displacementBias={-0.006}
               roughness={1}
@@ -155,7 +156,17 @@ function MoonModel({
                 shader.fragmentShader = shader.fragmentShader.replace(
                   "#include <map_fragment>",
                   "#include <map_fragment>\nfloat lunarLuma = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(lunarLuma), 0.85);",
-                );
+                ).replace("#include <opaque_fragment>", `
+                  float incidence = dot(normal, directionalLights[0].direction);
+                  float mu = max(incidence, 0.0);
+                  float muView = max(dot(normal, normalize(vViewPosition)), .001);
+                  float terminator = smoothstep(-.012, .018, incidence);
+                  float lunarResponse = mu / max(mu + muView, .001);
+                  vec3 earthshine = vec3(.026,.033,.045);
+                  float rim = pow(1.0-muView, 12.0) * terminator * .08;
+                  outgoingLight = diffuseColor.rgb * (earthshine + vec3(lunarResponse*2.4*terminator)) + vec3(.55,.72,1.)*rim;
+                  #include <opaque_fragment>
+                `);
               }}
             />
           </mesh>
@@ -183,17 +194,20 @@ function MoonModel({
       </group>
       <primitive object={line} />
       <mesh ref={earth} position={[atmosphere.mobile ? 0.36 : 0.9, atmosphere.mobile ? 1.15 : 0.95, 0]}>
-        <circleGeometry args={[(9 * 3.08) / size.width, 32]} />
-        <meshBasicMaterial color="#5CC8FF" />
+        <sphereGeometry args={[.075, 32, 24]} />
+        <EarthMaterial />
+        <Glow color="#5CC8FF" scale={.26} />
         <Html portal={portal} center position={[0, 0.09, 0]} style={{ pointerEvents: "none" }}>
           <span className="hero-body-label tone-earth" aria-hidden="true">
             EARTH
           </span>
         </Html>
       </mesh>
-      <mesh position={[-1.07, 0.96, 0]}>
+      <mesh position={[viewport.width * .1, viewport.height * .34, 0]}>
         <circleGeometry args={[0.013, 20]} />
         <meshBasicMaterial color="#FFC46B" />
+        <Glow color="#FFC46B" scale={.35} />
+        <mesh scale={[.45,.003,1]}><planeGeometry /><meshBasicMaterial color="#FFC46B" transparent opacity={.45} /></mesh>
         <Html portal={portal} center position={[0, 0.08, 0]} style={{ pointerEvents: "none" }}>
           <span className="hero-body-label tone-sun" aria-hidden="true">
             SUN
@@ -225,6 +239,7 @@ function MoonCanvas({ atmosphere, diving }: { atmosphere: Atmosphere; diving: bo
           }}
           fallback={<MoonFallback />}
         >
+          <Stars />
           <Galaxy atmosphere={atmosphere} />
           <MoonModel diving={diving} atmosphere={atmosphere} portal={portal} onReady={callbacks.ready} onError={callbacks.error} />
         </Canvas>
@@ -238,4 +253,15 @@ export default function MoonHero({ atmosphere, diving }: { atmosphere: Atmospher
       <MoonCanvas atmosphere={atmosphere} diving={diving} />
     </MoonBoundary>
   );
+}
+
+function EarthMaterial() {
+  const map = useTexture('/earth.webp'); map.colorSpace = SRGBColorSpace;
+  useEffect(() => () => {map.dispose(); useTexture.clear('/earth.webp');}, [map]);
+  return <meshStandardMaterial map={map} roughness={1} emissive="#0B1825" emissiveIntensity={.15} />;
+}
+function Glow({color,scale}:{color:string;scale:number}) {
+  return <mesh scale={scale}><planeGeometry /><shaderMaterial transparent depthWrite={false} uniforms={{tint:{value:new Color(color)}}}
+    vertexShader="varying vec2 uvp; void main(){uvp=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }"
+    fragmentShader="varying vec2 uvp; uniform vec3 tint; void main(){float d=length(uvp-.5);gl_FragColor=vec4(tint,pow(max(0.,1.-d*2.),3.)*.3);}" /></mesh>;
 }

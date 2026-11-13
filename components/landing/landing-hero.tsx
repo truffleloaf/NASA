@@ -110,7 +110,7 @@ export function LandingHero({ onExplore, onCompare }: { onExplore: () => void; o
         </p>
         <ProvenanceBadge
           kind="Illustrative"
-          detail="Decorative Moon, Sun and Earth composition; use the explorer for computed terrain and estimated visibility."
+          detail="Decorative composition and compressed 30-second libration (±7° longitude, ±6.7° latitude). Not a time-accurate view; use the explorer for computed directions and estimated visibility."
         />
       </motion.div>
     </section>
