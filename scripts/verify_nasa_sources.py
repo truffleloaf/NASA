@@ -14,8 +14,25 @@ from urllib.request import urlopen
 from ephemeris import parse, query, write_json
 
 
+TEXT_SUFFIXES = {'.json', '.lbl', '.txt', '.csv'}
+
+
 def digest(content):
     return hashlib.sha256(content).hexdigest()
+
+
+def digest_asset(path):
+    """Hash a shipped asset with line endings canonicalised to LF.
+
+    Git stores these files with LF, but a Windows checkout with core.autocrlf
+    rewrites text files to CRLF, so hashing the working-tree bytes would record
+    a digest that no Linux checkout or static host can reproduce. Text assets
+    are therefore normalised; binary assets (.bin, .jpg) are hashed as-is.
+    """
+    content = path.read_bytes()
+    if path.suffix.lower() in TEXT_SUFFIXES:
+        content = content.replace(b'\r\n', b'\n')
+    return digest(content)
 
 
 def compare_rows(raw, packed, offset, start):
@@ -74,7 +91,7 @@ def main(refresh):
         'mode': 'fresh-horizons-responses' if refresh else 'original-cached-responses',
         'provenance': 'Computed', 'sites': sites,
         'terrainSource': terrain['source'],
-        'assets': {f'/data/{p}': digest((assets / p).read_bytes()) for p in paths},
+        'assets': {f'/data/{p}': digest_asset(assets / p) for p in paths},
         'limitations': ['Source equality and file integrity do not establish flight accuracy.',
                         'Windows and mast effects remain estimates from terrain horizons and hourly samples.',
                         'Terrain source hash checked against the original local NASA LOLA product.']})
