@@ -28,7 +28,8 @@ Usage
     python backend/pipeline/cross_product.py --check ...
 
 ``--check`` compares the printed values with the numbers recorded in
-``docs/DATA.md`` and exits non-zero on drift.  The 40 m DEM is not committed
+``docs/DATA.md`` and with the stricter baseline in ``EXPECTED``, and exits
+non-zero on drift from either.  The 40 m DEM is not committed
 (see ``backend/data/README.md``); download it with ``fetch_dem.py`` first.
 """
 
@@ -280,13 +281,16 @@ def main() -> int:
         print("docs/DATA.md comparison: all documented cells reproduce within tolerance.")
 
     if args.check:
-        failures = check(rows)
+        # Drift from the published table is a failure, not a note: the table is
+        # what the report cites, and silently drifting from it is the bug this
+        # check exists to catch.
+        failures = check(rows) + [f"docs/DATA.md: {message}" for message in drift]
         if failures:
             print("\nFAIL")
             for message in failures:
                 print(f"  - {message}")
             return 1
-        print("\nPASS  values match the recorded cross-product baseline")
+        print("\nPASS  values match the recorded cross-product baseline and docs/DATA.md")
     return 0
 
 
