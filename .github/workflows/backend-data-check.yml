@@ -43,6 +43,9 @@ jobs:
       - name: Compile backend
         run: python -m compileall -q backend/pipeline
 
+      - name: Backend unit tests
+        run: python -m unittest discover -s backend/pipeline/tests -v
+
       - name: Schema validator self-test
         run: python scripts/check_schema.py --self-test
 
