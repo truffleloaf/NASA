@@ -50,5 +50,6 @@ Source: https://svs.gsfc.nasa.gov/4720/
 
 - `public/moon-color.jpg`: `lroc_color_2k.jpg` (2025 color map)
 - `public/moon-height.jpg`: `ldem_3_8bit.jpg`
+- `public/data/terrain/polar-1024-lroc.jpg`: LROC WAC south-pole summer mosaic (NASA/GSFC/ASU, 236.9 m/px), resampled to the terrain grid; display context only, not used in calculations.
 
 Used for visualization only. The CGI color map is optimized for aesthetics, not scientific measurement.

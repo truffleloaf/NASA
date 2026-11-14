@@ -13,6 +13,7 @@ frontend. There is no HTTP API: the browser fetches or statically imports these 
 | `horizon/<site>.json` | `horizon` | `scripts/terrain.py` |
 | `terrain/polar-1024.json` | `terrainHeader` | `scripts/terrain.py` |
 | `validation.json` | `validationReport` | `scripts/validate_ephemeris.py` |
+| `terrain/polar-1024-lroc.json` | `imagery` | `scripts/imagery.py` |
 
 `public/data/terrain/polar-1024.bin` is described by the `terrainHeader` byte layout
 (`1024 × 1024` uint16 little-endian). `ephemerisRow`, `site`, `terrainSource`,

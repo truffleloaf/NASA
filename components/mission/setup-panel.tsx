@@ -28,7 +28,9 @@ export function SetupPanel({ mission: m, onFind }: { mission: MissionState; onFi
       <div className="site-chips">
         {SITES.map((site) => (
           <Chip key={site.id} selected={m.config.site === site.id} onClick={() => m.update({ site: site.id })}>
-            {site.name}
+            <span title={site.kind === "artemis-candidate" ? "NASA Artemis III candidate landing region" : "Reference planning point"}>
+              {site.name}
+            </span>
           </Chip>
         ))}
       </div>

@@ -1091,6 +1091,18 @@ dd {
   padding: 8px 12px;
   transform: translateY(-26px);
 }
+.terrain-label > span,
+.terrain-kind {
+  display: block;
+}
+.terrain-kind {
+  margin-top: 2px;
+  font: 10px var(--font-data);
+  color: var(--text-muted);
+}
+.terrain-label.selected .terrain-kind {
+  color: var(--ok);
+}
 .terrain-label.selected {
   color: var(--ok);
   border-color: var(--ok);
@@ -1274,6 +1286,15 @@ dd {
 }
 .ranking-row small {
   font: 11px var(--font-data);
+  color: var(--text-muted);
+}
+.ranking-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ranking-name .site-kind {
+  font: 10px var(--font-data);
   color: var(--text-muted);
 }
 .ranking-row[aria-pressed="true"] > span:first-child {
@@ -1886,6 +1907,9 @@ caption {
   .terrain-label {
     font-size: 9px;
     padding: 8px;
+  }
+  .terrain-kind {
+    font-size: 9px;
   }
   .time-panel {
     padding: 16px;

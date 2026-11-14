@@ -148,6 +148,7 @@
       "required": [
         "id",
         "name",
+        "kind",
         "lat",
         "lon",
         "elevationMeters",
@@ -158,6 +159,11 @@
       "properties": {
         "id": { "$ref": "#/$defs/siteId" },
         "name": { "type": "string", "minLength": 1 },
+        "kind": {
+          "description": "artemis-candidate marks a NASA Artemis III candidate landing region; reference marks a representative planning point.",
+          "type": "string",
+          "enum": ["artemis-candidate", "reference"]
+        },
         "lat": { "type": "number", "minimum": -90, "maximum": 0 },
         "lon": { "type": "number", "minimum": -180, "maximum": 180 },
         "elevationMeters": { "type": "number", "minimum": -12000, "maximum": 12000 },

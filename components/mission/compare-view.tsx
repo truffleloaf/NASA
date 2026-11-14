@@ -54,6 +54,9 @@ export function CompareView({ mission: m, onExplore }: { mission: MissionState; 
             </div>
             <h2>{site.name}</h2>
             <p className="mono small muted">
+              {site.kind === "artemis-candidate" ? "Artemis III candidate region" : "Reference region"}
+            </p>
+            <p className="mono small muted">
               {coordinates(site.lat, site.lon)}
             </p>
             <div className="comparison-stats">

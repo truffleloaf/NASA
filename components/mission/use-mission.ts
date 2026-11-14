@@ -17,12 +17,14 @@ import { encodeConfig, windowsCSV } from "@/lib/share";
 import { START_CONFIG, restoreSettings } from "@/lib/planning";
 import { verifyBundledAsset } from "@/lib/verified-data";
 export const SITES = manifest.sites as Site[];
+export const siteKindLabel = (kind: Site["kind"]) => kind === "artemis-candidate" ? "Artemis III candidate" : "Reference";
 export type MissionState = ReturnType<typeof useMission>;
 export function useMission(view: string) {
   const [config, setConfig] = useState<MissionConfig>(START_CONFIG),
     [data, setData] = useState<Partial<Record<SiteId, SiteData>>>({});
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
+    [integrity, setIntegrity] = useState<"verified" | "unverified">("verified"),
     [message, setMessage] = useState("");
   const [expert,setExpert] = useState(false);
   const [playing, setPlaying] = useState(false),
@@ -73,6 +75,7 @@ export function useMission(view: string) {
   }, [message]);
   useEffect(() => {
     const controller = new AbortController();
+    let unverified = false;
     Promise.allSettled(
       SITES.map(async (site) => {
         for (const path of [site.ephemeris, site.horizon])
@@ -82,7 +85,7 @@ export function useMission(view: string) {
             const response = await fetch(path, { signal: controller.signal });
             if (!response.ok) throw new Error(`${site.name}: data asset unavailable`);
             const bytes = await response.arrayBuffer();
-            await verifyBundledAsset(path, bytes);
+            if ((await verifyBundledAsset(path, bytes)) === "unverified") unverified = true;
             return JSON.parse(new TextDecoder().decode(bytes));
           }),
         );
@@ -100,6 +103,7 @@ export function useMission(view: string) {
       });
       setData(entries);
       setError(failures.join(". "));
+      setIntegrity(unverified ? "unverified" : "verified");
       setLoading(false);
     });
     return () => controller.abort();
@@ -206,6 +210,7 @@ export function useMission(view: string) {
     result,
     loading,
     error,
+    integrity,
     playing,
     setPlaying,
     speed,

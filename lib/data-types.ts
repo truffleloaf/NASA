@@ -45,6 +45,7 @@ export type EphemerisRow = [number, number, number, number, number, number];
 export type Site = {
   id: SiteId;
   name: string;
+  kind: "artemis-candidate" | "reference";
   lat: number;
   lon: number;
   elevationMeters: number;

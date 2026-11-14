@@ -18,15 +18,15 @@ SOURCE_MPP = 80.0
 EXTENT_M = SOURCE_SIZE * SOURCE_MPP
 SOURCE_URL = 'https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_80M.IMG'
 SITES = [
-    {'id': 'shackleton', 'name': 'Shackleton region', 'lat': -89.9, 'lon': 0.0},
-    {'id': 'malapert', 'name': 'Malapert Massif', 'lat': -85.99, 'lon': 2.3},
-    {'id': 'de-gerlache', 'name': 'de Gerlache region', 'lat': -88.7, 'lon': -68.7},
+    {'id': 'shackleton', 'name': 'Shackleton region', 'kind': 'reference', 'lat': -89.9, 'lon': 0.0},
+    {'id': 'malapert', 'name': 'Malapert Massif', 'kind': 'artemis-candidate', 'lat': -85.99, 'lon': 2.3},
+    {'id': 'de-gerlache', 'name': 'de Gerlache region', 'kind': 'reference', 'lat': -88.7, 'lon': -68.7},
     # Artemis III candidate regions (NASA, October 2024 down-selection). Coordinates are
     # approximate regional references; see docs/DATA.md for the source and the constraints
     # that keep every 150 km horizon ray inside the 80-90S source DEM.
-    {'id': 'mons-mouton', 'name': 'Mons Mouton', 'lat': -84.6, 'lon': 31.0},
-    {'id': 'nobile-rim-1', 'name': 'Nobile Rim 1', 'lat': -85.438, 'lon': 37.445},
-    {'id': 'haworth', 'name': 'Haworth', 'lat': -86.753, 'lon': -23.672},
+    {'id': 'mons-mouton', 'name': 'Mons Mouton', 'kind': 'artemis-candidate', 'lat': -84.6, 'lon': 31.0},
+    {'id': 'nobile-rim-1', 'name': 'Nobile Rim 1', 'kind': 'artemis-candidate', 'lat': -85.438, 'lon': 37.445},
+    {'id': 'haworth', 'name': 'Haworth', 'kind': 'artemis-candidate', 'lat': -86.753, 'lon': -23.672},
 ]
 
 def sha256(path):
