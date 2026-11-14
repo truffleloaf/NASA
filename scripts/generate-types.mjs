@@ -116,7 +116,9 @@ const generated = [
 const check = process.argv.includes("--check");
 if (check) {
   const current = fs.existsSync(OUTPUT_PATH) ? fs.readFileSync(OUTPUT_PATH, "utf8") : "";
-  if (current !== generated) {
+  // Compare in LF form: a Windows checkout with core.autocrlf=true stores this
+  // file with CRLF, which is not a contract drift and must not fail `npm test`.
+  if (current.replace(/\r\n/g, "\n") !== generated) {
     console.error("lib/data-types.ts is out of date. Run `npm run types:data`.");
     process.exit(1);
   }
