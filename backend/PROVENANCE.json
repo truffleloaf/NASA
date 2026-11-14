@@ -44,8 +44,8 @@
   "ephemeris": {
     "source": "JPL Horizons, DE441",
     "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
-    "cache_key": "kind_body_site_start_stop_step_altkm",
-    "note": "responses are reproducible from the API; cache files include the observer altitude in km so different mast or site heights cannot share a response"
+    "cache_key": "kind_body_site_startdate_stopdate_step_altkm_sha256(lon,lat,start,stop)[:10]",
+    "note": "responses are reproducible from the API; the cache name carries the observer altitude, longitude, latitude and full start/stop, so a changed mast, site height or site position cannot silently reuse an old response"
   },
   "cross_product_baseline": {
     "command": "python backend/pipeline/cross_product.py --check",

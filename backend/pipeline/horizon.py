@@ -127,6 +127,12 @@ def destination(lat0: float, lon0: float, az_deg, dist_m):
         np.sin(a) * np.sin(d) * np.cos(la),
         np.cos(d) - np.sin(la) * np.sin(lat),
     )
+    # 站点正好在极点时 cos(lat0) = 0，atan2 的两个参数同时为 0，经度会退化成
+    # 常数（实测 180 个方位只剩 2 条经线）。极点上经度本来就无定义，但射线
+    # 方向有定义：方位角 0 沿 lon0 子午线，所以极限是 lon = lon0 + azimuth。
+    at_pole = np.abs(np.cos(la)) < 1e-9
+    if np.any(at_pole):
+        lon = np.where(at_pole, np.radians(lon0) + a, lon)
     return np.degrees(lat), np.degrees(lon) % 360.0
 
 

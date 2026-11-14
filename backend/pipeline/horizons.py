@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import time
 import urllib.parse
 import urllib.request
@@ -37,12 +38,19 @@ R_MOON_KM = 1737.4
 CACHE_DIR = Path(__file__).resolve().parents[1] / "data" / "horizons"
 
 
-def _cache_path(kind: str, body: str, site: str, start: str, stop: str, step: str,
-                alt_km: float) -> Path:
-    """缓存键包含观测高度：0 m、2 m、20 m 的查询不能互相命中。"""
+def _cache_path(kind: str, body: str, site: str, lon: float, lat: float,
+                start: str, stop: str, step: str, alt_km: float) -> Path:
+    """缓存键包含观测高度、经纬度和完整起止时刻，任一变化都不命中旧响应。
+
+    文件名保持可读，指纹只收进那些会撞车的量：经度、纬度、完整起止时刻。
+    2026-11-14 之前只按站点名和日期命名，改坐标或把起点从 00:00 挪到 18:00
+    都会静默复用旧星历。
+    """
     safe = (f"{body}_{site}_{start[:10]}_{stop[:10]}_{step}_{alt_km:.4f}"
             .replace(" ", "").replace(":", ""))
-    return CACHE_DIR / f"{kind}_{safe}.txt"
+    fingerprint = hashlib.sha256(
+        f"{lon:.6f},{lat:.6f},{start},{stop}".encode("utf-8")).hexdigest()[:10]
+    return CACHE_DIR / f"{kind}_{safe}_{fingerprint}.txt"
 
 
 def build_url(body: str, lon: float, lat: float, alt_km: float,
@@ -107,7 +115,7 @@ def fetch(body: str, site: str, lon: float, lat: float,
     静默复用旧响应。
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    cache = _cache_path("azel", body, site, start, stop, step, alt_km)
+    cache = _cache_path("azel", body, site, lon, lat, start, stop, step, alt_km)
 
     if cache.exists() and not refresh:
         text = cache.read_text(encoding="utf-8", errors="replace")

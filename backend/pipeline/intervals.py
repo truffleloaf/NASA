@@ -50,10 +50,24 @@ def total_hours(mask, step_h: float) -> float:
     return float(np.count_nonzero(mask)) * step_h
 
 
+def gaps(mask) -> list[tuple[int, int]]:
+    """夹在两段可见之间的不可见段，返回 [(起始下标, 结束下标(不含)), ...]。
+
+    首尾两端的不可见段不算：那一段可能延伸到窗口之外，长度不可知，
+    要判断只能看 `truncates()`。
+    """
+    r = runs(mask)
+    return [(end, start) for (_, end), (start, _) in zip(r, r[1:])]
+
+
 def gap_hours(mask, step_h: float) -> list[float]:
-    """相邻两段可见之间"不可见"的时长（小时），只算中间的空档。"""
-    hs = run_hours(mask, step_h)
-    return [b - a for a, b in zip(hs, hs[1:])]
+    """相邻两段可见之间"不可见"的时长（小时），只算中间的空档。
+
+    注意：这是空档本身的长度，不是两段可见时长之差。2026-11-14 修的就是
+    后者：mask = [T,T,F,F,F,T] 曾返回 (1-2)*step 而不是 3*step，负值还可能
+    让 `longest_gap_hours` 报出一个负的"最长中断"。
+    """
+    return [(e - s) * step_h for s, e in gaps(mask)]
 
 
 def longest_gap_hours(mask, step_h: float) -> float:
