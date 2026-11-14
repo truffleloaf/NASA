@@ -25,8 +25,47 @@ def query(lat, lon, altitude_m, target, start='2026-01-01', end='2027-01-01', st
     return API+'?'+urllib.parse.urlencode(params)
 
 
+def requested_site(url):
+    """Observer point encoded in a Horizons URL: (E-lon deg, lat deg, alt km)."""
+    values = urllib.parse.parse_qs(urllib.parse.urlparse(url).query).get('SITE_COORD')
+    if not values: return None
+    try: return [float(v) for v in values[0].strip("'").split(',')]
+    except ValueError: return None
+
+
+def cached_site(raw):
+    """Observer point recorded in the response header, if the header has one.
+
+    Horizons prints east longitude in 0-360, so -68.7 comes back as 291.3.
+    """
+    for line in raw.splitlines():
+        text = line.strip()
+        if text.startswith('Center geodetic'):
+            try: return [float(v) for v in text.split(':', 1)[1].split('{')[0].split(',')]
+            except ValueError: return None
+    return None
+
+
+def check_cached_response(name, url, raw):
+    """Refuse a cache file that was fetched for a different observer point.
+
+    The cache name only carries the site id, so changing a site's coordinates or
+    elevation would otherwise reuse the old response and then record it under the
+    new URL and hash. An unparsable header is accepted: the point here is to stop
+    a *known* mismatch, not to reject responses from a changed Horizons format.
+    """
+    want, got = requested_site(url), cached_site(raw)
+    if not want or not got: return
+    dlon = abs((want[0] - got[0] + 180.0) % 360.0 - 180.0)
+    if dlon > 1e-4 or abs(want[1] - got[1]) > 1e-5 or abs(want[2] - got[2]) > 1e-5:
+        raise ValueError(f"{name} 的缓存是给 (lon={got[0]}, lat={got[1]}, alt={got[2]} km) 的，"
+                         f"当前查询要 (lon={want[0]}, lat={want[1]}, alt={want[2]} km)。"
+                         f"删除 {name} 或换一个 --cache 目录后重跑，不要静默复用旧星历。")
+
+
 def download(url, cache):
-    if cache.exists(): raw=cache.read_text()
+    if cache.exists():
+        raw=cache.read_text(); check_cached_response(cache.name, url, raw)
     else:
         request=urllib.request.Request(url,headers={'User-Agent':'LunarMissionNavigator-offline-data/1.0'})
         with urllib.request.urlopen(request,timeout=120) as response: raw=response.read().decode()

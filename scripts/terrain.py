@@ -127,8 +127,13 @@ def build(source, output):
     validate(manifest, 'manifest')
     write_json(output/'manifest.json',manifest)
     reconstructed = encoded.astype(float)*scale+low
-    assert np.max(np.abs(reconstructed-resized)) <= scale*.501
+    decoded = np.frombuffer(binary.read_bytes(), dtype='<u2').reshape(size, size)
+    assert np.array_equal(decoded, encoded), 'The written binary does not decode back to the encoded grid.'
     assert encoded.size == 1024*1024 and binary.stat().st_size == 2097152
+    # scale/minMeters in the header must reproduce the resampled grid. The 0.5-step
+    # bound is what nearest-integer quantisation guarantees, so this asserts the
+    # header is decodable, not that the encode is accurate.
+    assert np.max(np.abs(decoded.astype(float)*scale+low-resized)) <= scale*.501
     for site in manifest_sites: print(site['id'],site['elevationMeters'])
     print('Terrain and horizon masks written:', output)
 

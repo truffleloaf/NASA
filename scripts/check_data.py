@@ -57,7 +57,13 @@ def main():
         for point in references:
             for event in ('sunrise','sunset'):
                 if point[event] is not None:
-                    assert abs(point[event]['differenceSeconds']) < 3600
+                    gap = abs(point[event]['differenceSeconds'])
+                    # Both crossings are linear interpolations inside the same hour, so
+                    # any value is below 3600 s by construction: that bound can never
+                    # fail. Five minutes is an actual accuracy claim about the hourly
+                    # ephemeris against the one-minute reference.
+                    assert gap < 300, (f"{point['id']} {event}: hourly interpolation is "
+                                       f"{gap:.0f} s off the minute reference")
     print('Bundled terrain, ephemeris, horizon, and validation integrity checks passed.')
 
 
