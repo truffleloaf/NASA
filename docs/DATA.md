@@ -74,7 +74,7 @@ Both annual columns are the clamped convention; the three original sites' unclam
 
 `backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-14 full-coverage run on `LDEM_80S_40M` is the source of the numbers above; the script's `--check` mode guards them.
 
-CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/`, `schema/` or this file changes. The workflow caches the 462 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck`, `npm run check:contract` and `npm run build` on Node 24.
+CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/`, `schema/` or this file changes. The workflow runs the backend's Python unit tests first, then caches the 462 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck`, `npm run check:contract` and `npm run build` on Node 24.
 
 Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And the comparison is limited to the same 608 km source window as the shipped assets: rays from the Artemis sites reach the square's corners outside the nominal 80–90° S disc, so both sides share that coverage caveat. Nobile Rim 1's 2 m tail is the one place where the two products visibly disagree.
 
@@ -106,7 +106,7 @@ python3 scripts/check_schema.py --self-test
 python3 scripts/check_data.py
 ```
 
-Run in this order: terrain preparation recreates the manifest, then ephemeris preparation marks it ready. Ephemeris requests reuse files in `work/data-source/`; remove the relevant cached text file to request refreshed source data. A future Horizons model update can change regenerated values and response hashes. Data source labels and per-query metadata record what was actually used.
+Run in this order: terrain preparation recreates the manifest, then ephemeris preparation marks it ready. Ephemeris requests reuse files in `work/data-source/`; remove the relevant cached text file to request refreshed source data. A cached response is only reused when the observer point in its Horizons header matches the query — changing a site's coordinates or elevation raises instead of silently serving the old ephemeris (it would otherwise be recorded under the new URL and hash). A future Horizons model update can change regenerated values and response hashes. Data source labels and per-query metadata record what was actually used.
 
 The independent 40 m cross-check lives in `backend/pipeline/cross_product.py` and needs `backend/data/dem/ldem_80s_40m.img`, downloaded by `python backend/pipeline/fetch_dem.py --product 80s` (about 462 MB). It reads the committed `public/data` assets, not a generated copy:
 

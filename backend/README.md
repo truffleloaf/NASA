@@ -31,7 +31,8 @@ Honest status. Nothing is marked `done` unless it produces a number that has bee
 | Piece | State | Notes |
 | --- | --- | --- |
 | Ephemeris (Sun / Earth az-el) | **done** | JPL Horizons, topocentric on the Moon, cached to `data/horizons/` |
-| Interval analysis | **done** | runs, coverage, longest gap, edge truncation |
+| Interval analysis | **done** | runs, coverage, longest gap, edge truncation; covered by unit tests |
+| Unit tests | **done** | `tests/test_pipeline.py`: interval runs/gaps, curvature, exact-pole rays, analytic ramp skyline, ephemeris cache keys |
 | Operating-window matching | **moved** | now owned by the frontend's `lib/science.ts`; the old `windows.py`/`scan_windows.py` were removed |
 | Geometric visibility (no terrain) | **done** | baseline with no terrain |
 | DEM acquisition | **done** | LOLA `LDEM_85S_40M` (115 MB) and `LDEM_80S_40M` (462 MB), SHA-256 pinned in `PROVENANCE.json` |
@@ -63,7 +64,8 @@ backend/
 │  ├─ cross_product.py        shipped 80 m vs independent 40 m terrain table
 │  ├─ check_convergence.py    ray step and ray range sensitivity (unclamped skyline)
 │  ├─ demo_geometric.py       three-site Sun/Earth comparison, no terrain
-│  └─ check_frontend_tests.py run the frontend's npm test/typecheck/build
+│  ├─ check_frontend_tests.py run the frontend's npm test/typecheck/build
+│  └─ tests/test_pipeline.py  unit tests: intervals, geometry, synthetic skyline
 └─ data/                      generated, not committed (see data/README.md)
 ```
 
@@ -93,15 +95,17 @@ Current validation path:
     --label  backend/data/dem/ldem_80s_40m.lbl --check        # shipped 80 m vs 40 m table
 .venv/Scripts/python backend/pipeline/check_convergence.py     # ray step and ray range sensitivity
 .venv/Scripts/python backend/pipeline/check_frontend_tests.py  # npm test/typecheck/build on public/data
+.venv/Scripts/python -m unittest discover -s backend/pipeline/tests -v  # unit tests, no DEM or network
 ```
 
 `cross_product.py` reads the frontend's committed `public/data` assets, so run it from the
 repository root after `npm ci`/build. It accepts `--assets` to point at another checkout.
 
-CI (`.github/workflows/backend-data-check.yml`) runs `cross_product.py --check` when
-`public/data/`, `backend/`, `scripts/` or `docs/DATA.md` changes. It caches the 462 MB
-`LDEM_80S_40M` window (fetched with `fetch_dem.py --product 80s`) and then verifies that the
-check did not modify `public/data/`.
+CI (`.github/workflows/backend-data-check.yml`) runs the backend unit tests,
+`scripts/check_schema.py --self-test`, `scripts/check_data.py` and
+`cross_product.py --check` when `public/data/`, `backend/`, `scripts/` or `docs/DATA.md`
+changes. It caches the 462 MB `LDEM_80S_40M` window (fetched with `fetch_dem.py --product 80s`)
+and then verifies that the check did not modify `public/data/`.
 
 Historical/auxiliary commands (they do **not** write `public/data`):
 
@@ -116,6 +120,8 @@ no writer for it.
 
 `run_annual.py` and the other ephemeris users read the cache in `data/horizons/`. If it is
 absent they fetch from JPL and write it, so the first run needs network and later runs do not.
+Cache names carry the observer altitude, longitude, latitude and full start/stop, so changing a
+site's coordinates or the window fetches a new response instead of reusing an old one.
 
 ## Data sources
 

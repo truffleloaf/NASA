@@ -212,13 +212,15 @@ unless a screen adds that control.
 ### 4.3 Sampling in time
 
 - Ephemeris: 1 hour, 8761 samples covering 2026.
-- Backend visibility masks: interpolated to 10 minutes before thresholding, so interval
-  boundaries carry about ±10 minutes of quantisation rather than ±30. This is the **legacy
-  40 m** pipeline; the shipped frontend evaluates the hourly rows directly, so a UI window
-  boundary is hourly. `cross_product.py` uses hourly samples to match the frontend.
+- Backend visibility masks: thresholded on those hourly rows, exactly like the frontend, so a
+  window boundary carries about ±30 minutes of quantisation. The deleted legacy exporter
+  (`export_data.py`) used to interpolate to 10 minutes and to unwrap azimuth before
+  interpolating; no current script does, and `cross_product.py` uses hourly samples to match
+  the frontend.
 
-Azimuth is unwrapped before interpolation; interpolating across the 0°/360° discontinuity
-would produce a spurious swing through the opposite direction.
+The horizon profile is 1° in azimuth and is interpolated at each sample's azimuth with
+wrap-around at the 0°/360° seam (`np.interp(..., period=360.0)` in `run_annual.py`,
+`horizon_at()` in `cross_product.py`), so the profile needs no unwrapping step.
 
 ### 4.4 Intervals and windows
 
