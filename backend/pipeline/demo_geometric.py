@@ -53,7 +53,7 @@ def main() -> None:
 
     results = {}
     for site in SITES:
-        _, sun_az, sun_el = load("sun", site)
+        sun_t, sun_az, sun_el = load("sun", site)
         _, earth_az, earth_el = load("earth", site)
 
         # 两种判据：中心过地平线 / 边缘（上边缘、任一部位）过地平线
@@ -63,7 +63,7 @@ def main() -> None:
         earth_any = earth_el > -EARTH_RADIUS_DEG
 
         results[site] = dict(
-            sun_az=sun_az, sun_el=sun_el, earth_az=earth_az, earth_el=earth_el,
+            times=sun_t, sun_az=sun_az, sun_el=sun_el, earth_az=earth_az, earth_el=earth_el,
             sun_center=sun_center, sun_limb=sun_limb,
             earth_center=earth_center, earth_any=earth_any,
         )
@@ -94,7 +94,7 @@ def main() -> None:
     a, b = results["shackleton"], results["malapert"]
     print(f"{'UTC':>17} | {'Shackleton sun/earth':>22} | {'Malapert sun/earth':>20}")
     for i in range(0, min(len(a['sun_el']), len(b['sun_el'])), 12):
-        print(f"{'':>17} | {a['sun_el'][i]:+8.2f} / {a['earth_el'][i]:+8.2f}      | "
+        print(f"{a['times'][i]:%Y-%m-%d %H:%M} | {a['sun_el'][i]:+8.2f} / {a['earth_el'][i]:+8.2f}      | "
               f"{b['sun_el'][i]:+8.2f} / {b['earth_el'][i]:+8.2f}")
 
     print()
