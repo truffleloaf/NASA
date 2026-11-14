@@ -264,7 +264,7 @@ connected; it does not calibrate it. That is why the analytic checks in §5.2 ex
 
 | Invariant | Result |
 | --- | --- |
-| Terrain-aware visibility ≤ geometric visibility, **clamped convention only** | passes for all three sites |
+| Terrain-aware visibility ≤ geometric visibility, **clamped convention only** | passes for the three sites `run_annual.py` covers |
 | Unclamped visibility ≥ clamped visibility | passes (checked by `run_annual.py`) |
 | Azimuth wrap continuity: horizon(0.5°) ≈ horizon(359.5°) | 0.036° apart |
 | Image corners map to the latitude predicted from `MAP_SCALE` and image size | −82.936° vs −82.93° predicted |
@@ -296,7 +296,8 @@ steeper and it sits near the DEM edge. De Gerlache is the warning case: its near
 changes the 0 m skyline by a p95 of 1.36° between 40 m and 80 m sampling, so the shipped 80 m
 product is a real resolution choice there, not a rounding detail. The 2 m cross-product
 comparison over complete azimuths (§5.5) is less sensitive (p95 0.45°) but still the largest
-of the three sites.
+of the three original sites. The Artemis sites are not part of this ray-step run; their
+convergence was not measured separately.
 
 ### 5.4 Consistency with known values
 
@@ -321,11 +322,29 @@ of 150 km. The measured table is:
 | Shackleton | 360/360 | −0.01° | −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
 | Malapert | 205/360 | 0.00° | 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
 | de Gerlache | 256/360 | 0.00° | 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
+| Mons Mouton | 123/360 | −0.04° | −0.04° | 0.32° | 0.36° | 30.9 % | 31.2 % |
+| Nobile Rim 1 | 136/360 | +1.01° | +0.01° | 2.80° | 2.92° | 21.0 % | 20.9 % |
+| Haworth | 168/360 | 0.00° | 0.00° | 0.12° | 0.18° | 23.1 % | 23.1 % |
 
 These are the values in the frontend's `docs/DATA.md` table; `cross_product.py --check`
-guards them. The table was regenerated on 2026-11-13 after two earlier cells (Shackleton
-p95 and de Gerlache 40 m annual sunlight) could not be reproduced with the documented
-method; the values above are the reproducible ones.
+guards them. The first three rows are the sites that predate the Artemis III expansion;
+`b7f02b3` added Mons Mouton, Nobile Rim 1 and Haworth to the baseline and to this table on
+2026-11-13. The table was regenerated the same day after two earlier cells (Shackleton p95
+and de Gerlache 40 m annual sunlight) could not be reproduced with the documented method;
+the values above are the reproducible ones.
+
+Only azimuths whose 150 km ray stays inside the 40 m product are compared, so `complete` is
+also the sample size. The three Artemis sites sit near that product's 85°S edge and only
+123–168 of their 360 azimuths qualify, against 205–360 for the original sites. Their rows
+are therefore weaker evidence, and none of them validates an Artemis site's windows on its
+own.
+
+Nobile Rim 1 is the one row that is a documented disagreement rather than agreement: its
+2 m p95 is 2.80° with a +1.01° median against a +6.78° median shipped skyline, while its
+20 m median agrees to 0.01° and the annual fractions differ by 0.1 percentage point. The two
+products resolve the steep near-field rim differently at 2 m; the check records that
+disagreement rather than deciding which skyline is correct, so the row is reported as a
+discrepancy.
 
 The annual column here is the clamped convention, not the UI's 30.3 / 44.7 / 46.0 %. The
 point of the table is terrain-product agreement, not the app's headline numbers.
@@ -392,10 +411,13 @@ as good to tens of minutes, not better.
 - **40 m terrain (validation), 80 m terrain (product).** Features below the respective pixel
   size — including anything a rover would care about — are absent. The shipped product uses
   80 m; the 40 m pipeline is the independent check.
-- **Three sites, one year.** The shipped product covers Shackleton, Malapert and de Gerlache
-  for 2026. The 40 m check covers the same three sites but only the part of Malapert's and
-  de Gerlache's sky where the 85S DEM still has data. Libration and illumination repeat over
-  an 18.6-year cycle, so 2026 is representative but not universal.
+- **Six sites, one year.** The shipped product covers Shackleton, Malapert, de Gerlache and
+  the three Artemis sites added on 2026-11-13 (Mons Mouton, Nobile Rim 1, Haworth) for 2026.
+  The 40 m check covers all six, but only where the 85S DEM still has data: 360 / 205 / 256
+  complete azimuths for the original sites and 123 / 136 / 168 for the Artemis sites, so most
+  of their northern sky is unchecked. Nobile Rim 1's 2 m row is a documented disagreement,
+  not agreement (§5.5). Libration and illumination repeat over an 18.6-year cycle, so 2026 is
+  representative but not universal.
 - **Southern hemisphere only.** The pipelines are written for the south polar products.
   Northern-hemisphere products use the opposite longitude convention.
 - **Solar cycle and thermal environment** are not considered.
