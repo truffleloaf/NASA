@@ -1,7 +1,7 @@
 import { adviceFor } from "@/lib/planning";
 import { Earth, Sun, ArrowUpRight } from "lucide-react";
 import { formatTime } from "@/lib/science";
-import { SITES, type MissionState } from "./use-mission";
+import { SITES, siteKindLabel, type MissionState } from "./use-mission";
 import { Card } from "../ui/card";
 import { SectionLabel } from "../ui/section-label";
 import { StatTile } from "../ui/stat-tile";
@@ -80,7 +80,10 @@ export function InsightsPanel({ mission: m, onCompare }: { mission: MissionState
               onClick={() => m.update({ site: site.id })}
             >
               <span>
-                {site.name}
+                <span className="ranking-name">
+                  {site.name}
+                  <small className="site-kind">{siteKindLabel(site.kind)}</small>
+                </span>
                 <small>{m.results[site.id].longest ?? "—"} h</small>
               </span>
               <span className="ranking-bars">

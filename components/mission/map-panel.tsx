@@ -22,7 +22,7 @@ export function MapPanel({ mission: m }: { mission: MissionState }) {
     [reset, setReset] = useState(0),
     [exaggeration, setExaggeration] = useState(2);
   const [layers, setLayers] = useState<LayersState>({
-    shadows: true,
+    shadows: false,
     imagery: true,
     style: "hillshade",
     grid: true,

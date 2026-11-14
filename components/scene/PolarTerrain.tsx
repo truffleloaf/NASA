@@ -1,17 +1,18 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html, Line, useTexture } from "@react-three/drei";
-import { BufferAttribute, BufferGeometry, Color, DoubleSide, DirectionalLight, InstancedMesh, Object3D, SRGBColorSpace, Vector3 } from "three";
+import { OrbitControls, Html, Line } from "@react-three/drei";
+import { BufferAttribute, BufferGeometry, Color, DoubleSide, DirectionalLight, InstancedMesh, Object3D, SRGBColorSpace, Texture, TextureLoader, Vector3 } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import header from "@/public/data/terrain/polar-1024.json";
-import { SITES } from "../mission/use-mission";
+import { SITES, siteKindLabel } from "../mission/use-mission";
 import type { SceneProps } from "./scene";
 import { Stars } from "./stars";
 import { DirectionMarker } from "./direction-marker";
 import { elevationAt, polarForward, terrainAt } from "@/lib/terrain";
 import { dateMs, HOUR, sampleAt } from "@/lib/science";
 import { polarTextureUV } from "@/lib/scene-geometry";
+import { verifyBundledAsset } from "@/lib/verified-data";
 const SCALE = 25,
   RADIUS = 304 / SCALE,
   DEG = Math.PI / 180;
@@ -29,16 +30,55 @@ export function PolarTerrain({
   const { camera, invalidate, gl } = useThree(),
     controls = useRef<Controls>(null),
     markers = useRef<InstancedMesh>(null);
-  const colorMap = useTexture("/moon-color-4k.webp");
-  colorMap.colorSpace = SRGBColorSpace;
-  colorMap.anisotropy = 4;
-  useEffect(() => () => { colorMap.dispose(); useTexture.clear("/moon-color-4k.webp"); }, [colorMap]);
-  // The LROC south-pole mosaic shares the terrain grid, so it uses planar UVs, not
-  // the equirectangular mapping the global Moon colour map needs.
-  const lroc = useTexture("/data/terrain/polar-1024-lroc.jpg");
-  lroc.colorSpace = SRGBColorSpace;
-  lroc.anisotropy = 8;
-  useEffect(() => () => { lroc.dispose(); useTexture.clear("/data/terrain/polar-1024-lroc.jpg"); }, [lroc]);
+  const [colorMap, setColorMap] = useState<Texture | null>(null), [lroc, setLroc] = useState<Texture | null>(null);
+  // Load textures without suspending the scene: terrain renders immediately and swaps to
+  // the image when it arrives; a failed image leaves the neutral shaded material.
+  useEffect(() => {
+    let cancelled = false, objectUrl = "";
+    const loader = new TextureLoader();
+    const load = (url: string, anisotropy: number, apply: (texture: Texture) => void) =>
+      loader.load(url, (texture) => {
+        if (cancelled) { texture.dispose(); return; }
+        texture.colorSpace = SRGBColorSpace;
+        texture.anisotropy = anisotropy;
+        apply(texture);
+        invalidate();
+      });
+    load("/moon-color-4k.webp", 4, setColorMap);
+    // The LROC layer is audited too: verify the bytes before the decoder sees them and say
+    // so when the image is damaged, instead of silently falling back to the neutral terrain.
+    fetch("/data/terrain/polar-1024-lroc.jpg")
+      .then((response) => {
+        if (!response.ok) throw new Error("LROC imagery is unavailable.");
+        return response.arrayBuffer();
+      })
+      .then(async (bytes) => {
+        await verifyBundledAsset("/data/terrain/polar-1024-lroc.jpg", bytes);
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(new Blob([bytes], { type: "image/jpeg" }));
+        loader.load(objectUrl, (texture) => {
+          URL.revokeObjectURL(objectUrl);
+          if (cancelled) { texture.dispose(); return; }
+          texture.colorSpace = SRGBColorSpace;
+          texture.anisotropy = 8;
+          setLroc(texture);
+          invalidate();
+        }, undefined, () => {
+          URL.revokeObjectURL(objectUrl);
+          if (!cancelled) m.notify("LROC imagery could not be decoded. Showing terrain shading instead.");
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const damaged = error instanceof Error && /integrity check/i.test(error.message);
+        m.notify(damaged
+          ? "LROC imagery failed its integrity check. Showing terrain shading instead; restore the verified image or rebuild the data."
+          : "LROC imagery could not be loaded. Showing terrain shading instead.");
+      });
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [invalidate, m.notify]);
+  useEffect(() => () => { colorMap?.dispose(); }, [colorMap]);
+  useEffect(() => () => { lroc?.dispose(); }, [lroc]);
   const [hovered,setHovered] = useState<number | null>(null);
   const lamp = useRef<DirectionalLight>(null), lightTarget = useMemo(()=>new Object3D(),[]);
   const heightAt = (x:number,z:number) => ((elevationAt(heights,x*SCALE,z*SCALE)??0)/1000/SCALE)*exaggeration;
@@ -80,7 +120,8 @@ export function PolarTerrain({
         const level = layers.style === 'slope' ? .12+Math.min(1,field.slope/45)*.88 : layers.style === 'elevation' ? .15+(field.h-header.minMeters)/(header.maxMeters-header.minMeters)*.85 : field.ao*.88;
         // The mosaic carries its own 2010 lighting, so keep the vertex colour neutral
         // instead of multiplying it by the hillshade/slope/elevation ramp.
-        const color = layers.imagery ? new Color("#FFFFFF") : new Color().setRGB(level,level,level);
+        const imageReady = layers.imagery ? Boolean(lroc) : layers.style === "hillshade" ? Boolean(colorMap) : false;
+        const color = imageReady ? new Color("#FFFFFF") : new Color().setRGB(level,level,level);
         colors.push(color.r, color.g, color.b);
       }
     for (let row = 0; row < size; row++)
@@ -98,7 +139,7 @@ export function PolarTerrain({
     geo.setIndex(indices);
     geo.computeVertexNormals();
     return geo;
-  }, [relief, exaggeration, layers.style, layers.imagery]);
+  }, [relief, exaggeration, layers.style, layers.imagery, colorMap, lroc]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const points = SITES.map((site) => {
       const [x, z] = sitePoint(site.lat, site.lon);
@@ -209,10 +250,12 @@ export function PolarTerrain({
           <Html key={SITES[i].id} position={point} center zIndexRange={[8, 0]}>
             <button
               className={`terrain-label ${i === selectedIndex ? "selected" : ""}`}
+              aria-label={`${SITES[i].name}, ${siteKindLabel(SITES[i].kind)} region`}
               onFocus={()=>setHovered(i)} onBlur={()=>setHovered(null)} onPointerEnter={()=>setHovered(i)} onPointerLeave={()=>setHovered(null)}
               onClick={() => m.update({ site: SITES[i].id })}
             >
-              {SITES[i].name}
+              <span>{SITES[i].name}</span>
+              <small className="terrain-kind">{siteKindLabel(SITES[i].kind)}</small>
               {hovered===i && <span className="site-tooltip">{(()=>{const s=sampleAt(m.data[SITES[i].id],dateMs(m.config.start)+m.config.hour*HOUR,m.config.mast);return s ? `Sun ${s.sunEl.toFixed(1)}° · Earth ${s.earthEl.toFixed(1)}° · ${m.results[SITES[i].id].windows.some(w=>w.start<=m.config.hour&&w.end>m.config.hour) ? 'In operating window' : 'Outside windows'} · Estimated` : 'Data unavailable';})()}</span>}
             </button>
           </Html>

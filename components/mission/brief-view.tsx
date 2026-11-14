@@ -2,7 +2,7 @@
 import { Printer, Download, Link as LinkIcon } from "lucide-react";
 import { coordinates } from "@/lib/planning";
 import { formatTime } from "@/lib/science";
-import type { MissionState } from "./use-mission";
+import { siteKindLabel, type MissionState } from "./use-mission";
 import { Card } from "../ui/card";
 import { ProvenanceBadge } from "../ui/provenance-badge";
 import { Track } from "../ui/track";
@@ -42,6 +42,7 @@ export function BriefView({ mission: m }: { mission: MissionState }) {
           <ProvenanceBadge />
         </div>
         <h2>{m.selected.name}</h2>
+        <p className="mono small muted">{siteKindLabel(m.selected.kind)} region</p>
         <p className="mono">
           {m.config.start} — {m.config.end} · UTC
         </p>

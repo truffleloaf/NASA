@@ -84,7 +84,8 @@ def main(refresh):
         sites.append({'id': site['id'], 'name': site['name'], 'observer': ephemeris['source']['observer'],
                       'start': ephemeris['start'], 'end': ephemeris['end'], 'queries': checks})
     paths = ['manifest.json', 'terrain/polar-1024.bin', 'terrain/polar-1024.json',
-             'terrain/source.LBL', 'validation.json']
+             'terrain/source.LBL', 'terrain/polar-1024-lroc.jpg', 'terrain/polar-1024-lroc.json',
+             'validation.json']
     paths += [site[key].removeprefix('/data/') for site in manifest['sites'] for key in ('ephemeris', 'horizon')]
     write_json(assets / 'source-audit.json', {
         'version': 1, 'checkedAtUtc': datetime.now(timezone.utc).isoformat(),

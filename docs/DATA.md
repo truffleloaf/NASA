@@ -18,7 +18,7 @@ Source SHA-256: `e6591eeea35402ca5e124ca00f5bf0774381a2d4fa919144b455d82b8ff65fd
 
 `manifest.json` lists site coordinates, DEM-sampled elevation, ephemeris and horizon URLs. The named points are approximate regional reference locations, not surveyed landing sites. In particular, “Shackleton region” and “de Gerlache region” do not assert that the given coordinate lies on a usable rim.
 
-Three of the six sites are Artemis III candidate landing regions from NASA's October 2024 down-selection ([release 24-136](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)): `mons-mouton` (Mons Mouton), `nobile-rim-1` (Nobile Rim 1) and `haworth` (Haworth). Region outlines and individual landing-site ellipses are not modelled. Nobile Rim 1 and Haworth use the published region bounding-box midpoints (−85.438°, 37.445° E and −86.753°, 23.672° W) from a companion south-polar topography dataset ([Zenodo 17954508](https://zenodo.org/records/17954508)); Mons Mouton uses the IAU feature centre (−84.6°, 31.0° E). At that latitude the northern 150 km rays cross the 80° S latitude circle and sample the source DEM square corners, which lie outside the nominal 80–90° S coverage; those samples come from the same LOLA product, but the declared-coverage caveat is repeated in that site's horizon limitations. A candidate region at 84° S or farther north would leave the source square entirely, which is why the fixed 150 km ray limit cannot process the northernmost Artemis regions.
+Three of the six sites are Artemis III candidate landing regions from NASA's October 2024 down-selection ([release 24-136](https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/)): `mons-mouton` (Mons Mouton), `nobile-rim-1` (Nobile Rim 1) and `haworth` (Haworth); `malapert` is also marked `artemis-candidate`, while `shackleton` and `de-gerlache` are `reference`. The manifest `kind` field carries that distinction into the UI. Region outlines and individual landing-site ellipses are not modelled. Nobile Rim 1 and Haworth use the published region bounding-box midpoints (−85.438°, 37.445° E and −86.753°, 23.672° W) from a companion south-polar topography dataset ([Zenodo 17954508](https://zenodo.org/records/17954508)); Mons Mouton uses the IAU feature centre (−84.6°, 31.0° E). At that latitude the northern 150 km rays cross the 80° S latitude circle and sample the source DEM square corners, which lie outside the nominal 80–90° S coverage; those samples come from the same LOLA product, but the declared-coverage caveat is repeated in that site's horizon limitations. A candidate region at 84° S or farther north would leave the source square entirely, which is why the fixed 150 km ray limit cannot process the northernmost Artemis regions.
 
 `terrain/polar-1024.bin` is 1,024 × 1,024 unsigned 16-bit little-endian, row-major. Decode height in metres as `minMeters + sample * scaleMeters` using `terrain/polar-1024.json`. Its 608-kilometre square has nominal 593.75-metre display pixels. Each output sample averages a 7–8 pixel block of the original DEM; this uneven integer block partition adds a sub-source-pixel positional approximation to the nominal regular output grid. The visual mesh is for context; horizon calculations use the original 80-metre source. Quantization contributes at most half a stored unit (about 0.109 metres).
 
@@ -41,7 +41,7 @@ Interpolate the two mast profiles only as an estimated sensitivity model. An 80-
 - `scripts/check_schema.py` validates all five file types plus cross-file linkage (paths resolve, `siteId` agrees, manifest elevation matches the horizon, ephemeris year matches the manifest).
 - `python scripts/check_data.py` runs the schema check and the physical-invariant checks; CI runs it on every change to `public/data/`, `scripts/`, `schema/` or this document.
 
-The schema pins values the frontend assumes: `stepHours: 1`, six ephemeris columns, `azimuthStepDegrees: 1`, 360 skyline points, `[2, 20]` mast heights, `1024 × 1024` uint16 terrain, and the closed set of site ids. Changing any of those is a contract change: edit the schema, regenerate `lib/data-types.ts`, regenerate the data, and run the checks.
+The schema pins values the frontend assumes: `stepHours: 1`, six ephemeris columns, `azimuthStepDegrees: 1`, 360 skyline points, `[2, 20]` mast heights, `1024 × 1024` uint16 terrain, the closed set of site ids and site `kind` values (`artemis-candidate`/`reference`), and the imagery layer's path, `1024 × 1024` size and north-up orientation (`rotationDegrees: 0`, `mirrored: false`). Changing any of those is a contract change: edit the schema, regenerate `lib/data-types.ts`, regenerate the data, and run the checks.
 
 ## Solar-crossing reference checks
 
@@ -98,6 +98,8 @@ python3 scripts/validate_ephemeris.py
 work/data-venv/bin/python scripts/terrain.py --self-test
 work/data-venv/bin/python scripts/imagery.py --self-test
 work/data-venv/bin/python scripts/check_reproducibility.py --source work/data-source/LDEM_80S_80M.IMG
+python3 scripts/verify_nasa_sources.py --self-test
+python3 scripts/verify_nasa_sources.py
 python3 scripts/ephemeris.py --self-test
 python3 scripts/validate_ephemeris.py --self-test
 python3 scripts/check_schema.py --self-test

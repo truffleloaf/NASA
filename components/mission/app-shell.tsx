@@ -133,6 +133,13 @@ export default function AppShell({ initialView, onHome }: { initialView: string;
             Some bundled data could not be loaded. {m.error}
           </p>
         )}
+        {m.integrity === "unverified" && !m.error && (
+          <p className="data-warning" role="status">
+            The bundled files loaded, but this origin is not HTTPS or localhost, so the browser cannot run the
+            SHA-256 integrity check. The numbers still come from the bundled NASA data; tampering or corruption would
+            go unnoticed. Open the site on 127.0.0.1 or HTTPS to enable verification.
+          </p>
+        )}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={view}
