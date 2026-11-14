@@ -1,18 +1,27 @@
-"""下载 LOLA 极区 DEM（PDS Geosciences Node）。
+"""下载 LOLA 极区 DEM（PDS Geosciences / MIT 镜像）。
 
-产品：LDEM_85S_40M —— 覆盖 85°S 至 90°S，40 米/像素，极射赤面投影。
-选择理由：Shackleton(89.90°S) 和 Malapert(85.99°S) 都在范围内；
-40 m/像素 对"几公里内的地平线"足够（一个 1 km 的坑缘跨 25 个像素）。
+两个产品，编码与基准相同，只是窗口不同：
+
+- ``ldem_85s_40m`` —— 85°S–90°S，7584 × 7584，115 MB。年周期与收敛检查用。
+- ``ldem_80s_40m`` —— 80°S–90°S，15200 × 15200，462 MB。六站 cross-product 用；
+  85S 窗口装不下 Artemis 三站朝北的 150 km 射线，会把它们截断。
 
 来源锁在 `backend/PROVENANCE.json`：每个文件的字节数和 SHA-256 都固定，
 下载后和缓存命中时都会校验，避免截断的缓存静默改变地形。
 
 支持断点续传：网络断了重跑同一条命令即可。已经完整的文件直接跳过；
 若服务器对越界 Range 返回 416，也只有哈希正确时才当作完整。
+
+用法：
+
+    python backend/pipeline/fetch_dem.py                  # 两个都下
+    python backend/pipeline/fetch_dem.py --product 80s    # 只下宽幅 DEM
+    python backend/pipeline/fetch_dem.py --product 85s    # 只下窄幅 DEM
 """
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import pathlib
@@ -21,16 +30,22 @@ import time
 import urllib.error
 import urllib.request
 
-BASE = ("https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/"
-        "lrolol_1xxx/data/lola_gdr/polar/img/")
-PRODUCT = "ldem_85s_40m"
+PDS = ("https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/"
+       "lrolol_1xxx/data/lola_gdr/polar/img/")
+MIT = "https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/"
+
+PRODUCTS = {
+    "85s": dict(name="ldem_85s_40m", bases=(PDS, MIT), expected=7584 * 15168),
+    "80s": dict(name="ldem_80s_40m", bases=(MIT,), expected=15200 * 30400),
+}
+
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / "data" / "dem"
 PROVENANCE = pathlib.Path(__file__).resolve().parents[1] / "PROVENANCE.json"
 
 
-def load_sources() -> dict:
+def load_sources(key: str) -> dict:
     with PROVENANCE.open(encoding="utf-8") as fh:
-        return json.load(fh)["dem"]["files"]
+        return json.load(fh)["dem"]["products"][key]["files"]
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -52,8 +67,11 @@ def verify(name: str, dest: pathlib.Path, sources: dict) -> bool:
     return False
 
 
-def download(name: str, expected: int | None = None) -> pathlib.Path:
-    sources = load_sources()
+def download(key: str, suffix: str) -> pathlib.Path:
+    product = PRODUCTS[key]
+    name = product["name"] + suffix
+    expected = product["expected"] if suffix == ".img" else None
+    sources = load_sources(key)
     dest = OUT_DIR / name
 
     partial = 0
@@ -69,19 +87,27 @@ def download(name: str, expected: int | None = None) -> pathlib.Path:
             dest.unlink()
             partial = 0
 
-    req = urllib.request.Request(BASE + name)
-    if partial:
-        req.add_header("Range", f"bytes={partial}-")
-
-    try:
-        resp = urllib.request.urlopen(req, timeout=120)
-    except urllib.error.HTTPError as exc:
-        # 从 EOF 起的 Range 会被拒绝为 416；只有哈希正确才算完整，避免把
-        # 损坏的缓存当成下载成功。
-        if exc.code == 416 and partial and verify(name, dest, sources):
-            print(f"[skip] {name} 已完整（{partial:,} 字节）")
-            return dest
-        raise
+    resp = None
+    errors = []
+    for base in product["bases"]:
+        req = urllib.request.Request(base + name)
+        if partial:
+            req.add_header("Range", f"bytes={partial}-")
+        try:
+            resp = urllib.request.urlopen(req, timeout=120)
+            break
+        except urllib.error.HTTPError as exc:
+            # 从 EOF 起的 Range 会被拒绝为 416；只有哈希正确才算完整，避免把
+            # 损坏的缓存当成下载成功。
+            if exc.code == 416 and partial and verify(name, dest, sources):
+                print(f"[skip] {name} 已完整（{partial:,} 字节）")
+                return dest
+            errors.append(f"{base}: HTTP {exc.code}")
+        except (urllib.error.URLError, OSError) as exc:
+            errors.append(f"{base}: {exc}")
+            print(f"[retry] {base.split('/')[2]} 不可用，换镜像", flush=True)
+    if resp is None:
+        raise SystemExit(f"{name} 下载失败：\n  " + "\n  ".join(errors))
 
     t0 = time.time()
     with resp:
@@ -112,18 +138,27 @@ def download(name: str, expected: int | None = None) -> pathlib.Path:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="下载 LOLA 极区 40 m DEM")
+    parser.add_argument("--product", choices=["85s", "80s", "all"], default="all",
+                        help="85s = 窄幅年周期用，80s = 宽幅六站交叉验证用（默认两个）")
+    args = parser.parse_args()
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"目标目录 {OUT_DIR}")
     print(f"来源锁 {PROVENANCE}")
 
-    # 尺寸来自 .LBL：FILE_RECORDS=7584, RECORD_BYTES=15168
-    download(f"{PRODUCT}.img", expected=7584 * 15168)
-    download(f"{PRODUCT}.lbl")
+    keys = ["85s", "80s"] if args.product == "all" else [args.product]
+    for key in keys:
+        download(key, ".img")
+        download(key, ".lbl")
 
-    img = OUT_DIR / f"{PRODUCT}.img"
-    if img.stat().st_size != 7584 * 15168:
-        print(f"❌ 尺寸不对：{img.stat().st_size} != {7584*15168}", file=sys.stderr)
-        raise SystemExit(1)
+    # 尺寸按 .LBL 的 RECORD_BYTES × FILE_RECORDS 校验
+    for key in keys:
+        product = PRODUCTS[key]
+        img = OUT_DIR / (product["name"] + ".img")
+        if img.stat().st_size != product["expected"]:
+            print(f"❌ 尺寸不对：{img.stat().st_size} != {product['expected']}", file=sys.stderr)
+            raise SystemExit(1)
     print("✅ 尺寸与 SHA-256 校验通过")
 
 

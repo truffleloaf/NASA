@@ -57,26 +57,26 @@ On the shipped assets, all 2,160 skyline angles reproduce within 0.01° (measure
 
 ## Cross-product terrain check
 
-The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_85S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline's legacy convention clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site.
+The horizons are also compared against an independent terrain product and ray marcher: the 40 m `LDEM_80S_40M` DEM, sampled at 40 m along the same 1° azimuth grid by the separate `backend/` pipeline. Both sides are clamped at 0° before comparison, because the shipped assets keep negative skyline elevations while that pipeline's legacy convention clamps them; comparing unclamped values measures the convention rather than the terrain, and inflates the difference to the most negative angle at each site. The 80S–90S window is used because the older 85S product truncated most of the Artemis sites' northern 150 km rays.
 
 | site | complete-coverage azimuths | median Δ, 2 m / 20 m | p95 Δ | max Δ | annual sunlight, 80 m (clamped) | annual sunlight, 40 m (clamped) |
 | --- | --- | --- | --- | --- | --- | --- |
 | Shackleton | 360 / 360 | −0.01° / −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
-| Malapert | 205 / 360 | 0.00° / 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
-| de Gerlache | 256 / 360 | 0.00° / 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
-| Mons Mouton | 123 / 360 | −0.04° / −0.04° | 0.32° | 0.36° | 30.9 % | 31.2 % |
-| Nobile Rim 1 | 136 / 360 | 1.01° / 0.01° | 2.80° | 2.92° | 21.0 % | 20.9 % |
-| Haworth | 168 / 360 | 0.00° / 0.00° | 0.12° | 0.18° | 23.1 % | 23.1 % |
+| Malapert | 360 / 360 | 0.00° / 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
+| de Gerlache | 360 / 360 | 0.00° / 0.00° | 0.68° | 0.73° | 30.5 % | 29.0 % |
+| Mons Mouton | 360 / 360 | −0.03° / −0.02° | 0.44° | 0.60° | 30.9 % | 31.2 % |
+| Nobile Rim 1 | 360 / 360 | 0.01° / 0.00° | 2.40° | 2.92° | 21.0 % | 20.9 % |
+| Haworth | 360 / 360 | 0.00° / 0.00° | 0.16° | 0.24° | 23.1 % | 23.1 % |
 
-Only azimuths whose 150 km ray stays inside the 40 m product enter a row, so `complete` is also the sample size: 360, 205 and 256 for the first three sites, but 123, 136 and 168 for the Artemis sites, which sit near that product's 85° S edge. For the three original sites the skyline agrees to well under a degree (p95 ≤ 0.45°, max ≤ 0.66°) and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code. Mons Mouton and Haworth still agree closely over their covered sector. **Nobile Rim 1 does not:** its 2 m p95 is 2.80° with a +1.01° median against a +6.78° median shipped skyline, while its 20 m median agrees to 0.01° — the two products resolve the steep near-field rim differently at 2 m. That row is a documented discrepancy, not agreement, and none of these three rows by itself validates an Artemis site's windows.
+No azimuth is excluded now: every 150 km ray stays inside the 80S–90S window, so `complete` is 360/360 for all six sites. The skyline agrees to well under a degree everywhere except Nobile Rim 1 (p95 ≤ 0.68°, max ≤ 0.73°), and the annual illumination fraction to within 1.5 percentage points, despite a 2× difference in elevation sampling and separate code. **Nobile Rim 1 is the one row with a real tail:** its 2 m median agrees (0.01°), but its p95 is 2.40° and its maximum 2.92° — about 5 % of azimuths resolve the steep near-field rim differently, while its 20 m median agrees to 0.00° and its annual fraction to 0.1 percentage point. An earlier version of this table reported a +1.01° median for that site; that was an artifact of the 136-azimuth partial coverage, and the median disappears once the whole sky is compared. The tail remains, so the row is a documented discrepancy, not agreement, and none of these rows by itself validates an Artemis site's windows.
 
 Both annual columns are the clamped convention; the three original sites' unclamped 2 m numbers are 30.3 % / 44.7 % / 46.0 % and are not what this table measures.
 
-`backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-13 run is the source of the numbers above; the script's `--check` mode guards them.
+`backend/pipeline/cross_product.py` regenerates this table from the shipped 80 m assets and the 40 m DEM. It uses the 40 m pipeline's 0.5° bin centres, interpolates the 80 m asset to the same physical azimuths, clamps both sides at 0°, and counts annual sunlight hourly at 2 m. The 2026-11-14 full-coverage run on `LDEM_80S_40M` is the source of the numbers above; the script's `--check` mode guards them.
 
-CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/`, `schema/` or this file changes. The workflow caches the 115 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck`, `npm run check:contract` and `npm run build` on Node 24.
+CI runs the same check in `.github/workflows/backend-data-check.yml` whenever `public/data/`, `backend/`, `scripts/`, `schema/` or this file changes. The workflow caches the 462 MB 40 m DEM (verified against `backend/PROVENANCE.json`), re-downloads it on a cache miss, and asserts that the check did not modify `public/data/`. A second job runs the frontend's `npm test`, `npm run typecheck`, `npm run check:contract` and `npm run build` on Node 24.
 
-Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And most sites are only compared where the 85S product still holds data: its 151.7 km usable radius ends before a 150 km ray, leaving 43 % and 29 % of Malapert's and de Gerlache's sky unchecked, and 53–66 % for the three Artemis sites. Nobile Rim 1's 2 m row is the one place where the two products visibly disagree.
+Two limits on that claim. Both DEMs derive from LOLA, so this tests the product and resolution choice, not the underlying altimetry. And the comparison is limited to the same 608 km source window as the shipped assets: rays from the Artemis sites reach the square's corners outside the nominal 80–90° S disc, so both sides share that coverage caveat. Nobile Rim 1's 2 m tail is the one place where the two products visibly disagree.
 
 This is a drift guard, not a physical validation. It cannot detect a wrong-but-consistent pipeline: if the ray march were wrong in the same way on both sides, the comparison would still pass. Agreement means the shipped numbers can be rebuilt from published data, not that they are correct.
 
@@ -106,12 +106,12 @@ python3 scripts/check_data.py
 
 Run in this order: terrain preparation recreates the manifest, then ephemeris preparation marks it ready. Ephemeris requests reuse files in `work/data-source/`; remove the relevant cached text file to request refreshed source data. A future Horizons model update can change regenerated values and response hashes. Data source labels and per-query metadata record what was actually used.
 
-The independent 40 m cross-check lives in `backend/pipeline/cross_product.py` and needs `backend/data/dem/ldem_85s_40m.img`, downloaded by `backend/pipeline/fetch_dem.py` (about 115 MB). It reads the committed `public/data` assets, not a generated copy:
+The independent 40 m cross-check lives in `backend/pipeline/cross_product.py` and needs `backend/data/dem/ldem_80s_40m.img`, downloaded by `python backend/pipeline/fetch_dem.py --product 80s` (about 462 MB). It reads the committed `public/data` assets, not a generated copy:
 
 ```sh
 python backend/pipeline/cross_product.py \
-    --source backend/data/dem/ldem_85s_40m.img \
-    --label  backend/data/dem/ldem_85s_40m.lbl --check
+    --source backend/data/dem/ldem_80s_40m.img \
+    --label  backend/data/dem/ldem_80s_40m.lbl --check
 ```
 
 No radio link budget, diffraction, spacecraft relay, power storage, solar-array orientation, subpixel hazards, terrain uncertainty propagation or communication hardware constraints are modeled. Earth-centre clearance is a geometric visibility criterion, not a guarantee of an operational communications link.

@@ -3,10 +3,17 @@
 
 The shipped product under ``public/data`` uses the 80 m ``LDEM_80S_80M`` DEM and
 keeps negative skyline angles.  This backend pipeline uses the independent 40 m
-``LDEM_85S_40M`` DEM and clamps the skyline at 0 degrees.  Comparing the two is
+``LDEM_80S_40M`` DEM and clamps the skyline at 0 degrees.  Comparing the two is
 therefore a comparison of terrain products *after* making the convention equal:
 both sides are clamped at 0 degrees here, exactly as the frontend's
 ``docs/DATA.md`` "Cross-product terrain check" section describes.
+
+The wider 80S-90S window is used instead of the older 85S product because the
+three Artemis sites added in November 2026 sit near or outside 85S: with
+``LDEM_85S_40M`` most of their northern rays left the raster, so only 123-168 of
+360 azimuths per site could be compared.  The 80S product is the same 40 m grid
+and datum with a wider window, and the overlap reproduces the 85S heights to
+0.000 m (p95), so the change only adds coverage.
 
 The table this script prints is the same one documented in ``docs/DATA.md``:
 complete-coverage azimuths, median/p95/max skyline differences at 2 m and 20 m,
@@ -15,8 +22,8 @@ and the annual sunlight fraction of both products on the shipped ephemeris.
 Usage
 -----
     python backend/pipeline/cross_product.py \
-        --source backend/data/dem/ldem_85s_40m.img \
-        --label  backend/data/dem/ldem_85s_40m.lbl
+        --source backend/data/dem/ldem_80s_40m.img \
+        --label  backend/data/dem/ldem_80s_40m.lbl
 
     python backend/pipeline/cross_product.py --check ...
 
@@ -42,8 +49,8 @@ import horizon  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_ASSETS = ROOT / "public" / "data"
-DEFAULT_SOURCE = Path(__file__).resolve().parents[1] / "data" / "dem" / "ldem_85s_40m.img"
-DEFAULT_LABEL = Path(__file__).resolve().parents[1] / "data" / "dem" / "ldem_85s_40m.lbl"
+DEFAULT_SOURCE = Path(__file__).resolve().parents[1] / "data" / "dem" / "ldem_80s_40m.img"
+DEFAULT_LABEL = Path(__file__).resolve().parents[1] / "data" / "dem" / "ldem_80s_40m.lbl"
 
 AZ_STEP_DEG = 1.0
 # The 40 m pipeline's historical bins are centred at 0.5, 1.5, ...; the
@@ -53,8 +60,9 @@ AZ_STEP_DEG = 1.0
 COMPARE_ORIGIN_DEG = 0.5
 # The backend's own run_horizon.py calls an azimuth "complete" when the ray
 # reaches at least 95% of the configured range; docs/DATA.md uses the same
-# convention (360 / 205 / 256 complete azimuths for the three original sites,
-# 123 / 136 / 168 for the three Artemis sites).
+# convention.  With the 80S-90S window every azimuth of every shipped site
+# reaches it, so all six rows are 360/360; the 85S product this check used
+# before truncated the northern rays of five of the six sites.
 COMPLETE_FRACTION = 0.95
 MASTS = (2.0, 20.0)
 MAX_RANGE_M = horizon.DEFAULT_MAX_RANGE_M
@@ -63,36 +71,34 @@ MAX_RANGE_M = horizon.DEFAULT_MAX_RANGE_M
 # tolerances allow for display rounding.
 #
 # ``complete`` is the number of 1 deg azimuths whose 150 km ray stays inside
-# the 40 m product; only those are compared.  The three Artemis sites sit close
-# to its 85 S edge, so a majority of their azimuths (the northern sector) are
-# excluded and their rows are weaker evidence than the first three.  Nobile Rim
-# 1 is the known exception: the 40 m and 80 m products resolve its steep
-# near-field rim differently, so its 2 m p95 (2.80 deg) is a documented
-# discrepancy, not agreement.
+# the 40 m product; only those are compared.  The wider 80S-90S window makes
+# every row 360/360.  Nobile Rim 1 still has the largest 2 m spread: its median
+# agrees (+0.01 deg) but 5% of azimuths differ by more than 2.4 deg, because
+# the two products resolve its steep near-field rim differently at 2 m.
 EXPECTED = {
     "shackleton": dict(complete=360, median_2=-0.01, median_20=-0.01,
                        p95=0.26, maximum=0.50, annual_80=23.7, annual_40=23.8),
-    "malapert": dict(complete=205, median_2=0.00, median_20=0.00,
+    "malapert": dict(complete=360, median_2=0.00, median_20=0.00,
                      p95=0.10, maximum=0.20, annual_80=39.8, annual_40=39.9),
-    "de-gerlache": dict(complete=256, median_2=0.00, median_20=0.00,
-                        p95=0.45, maximum=0.66, annual_80=30.5, annual_40=29.0),
-    "mons-mouton": dict(complete=123, median_2=-0.04, median_20=-0.04,
-                        p95=0.32, maximum=0.36, annual_80=30.9, annual_40=31.2),
-    "nobile-rim-1": dict(complete=136, median_2=1.01, median_20=0.01,
-                         p95=2.80, maximum=2.92, annual_80=21.0, annual_40=20.9),
-    "haworth": dict(complete=168, median_2=0.00, median_20=0.00,
-                    p95=0.12, maximum=0.18, annual_80=23.1, annual_40=23.1),
+    "de-gerlache": dict(complete=360, median_2=0.00, median_20=0.00,
+                        p95=0.68, maximum=0.73, annual_80=30.5, annual_40=29.0),
+    "mons-mouton": dict(complete=360, median_2=-0.03, median_20=-0.02,
+                        p95=0.44, maximum=0.60, annual_80=30.9, annual_40=31.2),
+    "nobile-rim-1": dict(complete=360, median_2=0.01, median_20=0.00,
+                         p95=2.40, maximum=2.92, annual_80=21.0, annual_40=20.9),
+    "haworth": dict(complete=360, median_2=0.00, median_20=0.00,
+                    p95=0.16, maximum=0.24, annual_80=23.1, annual_40=23.1),
 }
 
 # Values printed in docs/DATA.md.  Kept separately so this script can report
 # which cells the documented method does not reproduce instead of hiding them.
 DOCUMENTED = {
     "shackleton": dict(complete=360, p95=0.26, annual_40=23.8),
-    "malapert": dict(complete=205, p95=0.10, annual_40=39.9),
-    "de-gerlache": dict(complete=256, p95=0.45, annual_40=29.0),
-    "mons-mouton": dict(complete=123, p95=0.32, annual_40=31.2),
-    "nobile-rim-1": dict(complete=136, p95=2.80, annual_40=20.9),
-    "haworth": dict(complete=168, p95=0.12, annual_40=23.1),
+    "malapert": dict(complete=360, p95=0.10, annual_40=39.9),
+    "de-gerlache": dict(complete=360, p95=0.68, annual_40=29.0),
+    "mons-mouton": dict(complete=360, p95=0.44, annual_40=31.2),
+    "nobile-rim-1": dict(complete=360, p95=2.40, annual_40=20.9),
+    "haworth": dict(complete=360, p95=0.16, annual_40=23.1),
 }
 
 

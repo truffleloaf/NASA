@@ -92,8 +92,14 @@ is the same reference used by the DEM, so the two are consistent.
 | Datum | radius 1737.4 km |
 | Size | 115 MB |
 
-The 40 m product was chosen over the 5 m and 10 m products because it covers both candidate
-sites in one file at a size that can be handled on a laptop. See §5.3 for the measured cost
+The six-site cross-product check uses a wider window of the same grid,
+`LDEM_80S_40M`: 80°S–90°S, 15200 × 15200, 462 MB, same encoding and datum. It is
+required because the 85S window truncates most of the Artemis sites' northern 150 km
+rays; in their overlap the two products agree to 0.000 m (p95), so the wider file only
+adds coverage. Both files are pinned in `backend/PROVENANCE.json`.
+
+The 40 m product was chosen over the 5 m and 10 m products because it covers the sites
+in one file at a size that can be handled on a laptop. See §5.3 for the measured cost
 of that choice.
 
 ### 3.3 Projection orientation — PDS `dsmap_polar.cat`
@@ -313,38 +319,39 @@ convergence was not measured separately.
 ### 5.5 Cross-product comparison with the shipped 80 m assets
 
 `cross_product.py` reads `public/data/manifest.json` and the shipped 80 m `horizon/*.json`,
-recomputes the same 1° skyline from the 40 m DEM at the 40 m pipeline's 0.5° bin centres,
-clamps both sides at 0°, and compares only azimuths where the 40 m ray reaches at least 95 %
-of 150 km. The measured table is:
+recomputes the same 1° skyline from the independent 40 m `LDEM_80S_40M` DEM at the 40 m
+pipeline's 0.5° bin centres, clamps both sides at 0°, and compares only azimuths where the
+40 m ray reaches at least 95 % of 150 km. The wider 80S–90S window is required because the
+85S product this check used before truncated most of the Artemis sites' northern rays; in
+the overlap the two products are the same grid, so the change only adds coverage. The
+measured table is:
 
 | site | complete | 2 m median Δ | 20 m median Δ | 2 m p95 | 2 m max | annual sun 80 m (clamped) | annual sun 40 m (clamped) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Shackleton | 360/360 | −0.01° | −0.01° | 0.26° | 0.50° | 23.7 % | 23.8 % |
-| Malapert | 205/360 | 0.00° | 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
-| de Gerlache | 256/360 | 0.00° | 0.00° | 0.45° | 0.66° | 30.5 % | 29.0 % |
-| Mons Mouton | 123/360 | −0.04° | −0.04° | 0.32° | 0.36° | 30.9 % | 31.2 % |
-| Nobile Rim 1 | 136/360 | +1.01° | +0.01° | 2.80° | 2.92° | 21.0 % | 20.9 % |
-| Haworth | 168/360 | 0.00° | 0.00° | 0.12° | 0.18° | 23.1 % | 23.1 % |
+| Malapert | 360/360 | 0.00° | 0.00° | 0.10° | 0.20° | 39.8 % | 39.9 % |
+| de Gerlache | 360/360 | 0.00° | 0.00° | 0.68° | 0.73° | 30.5 % | 29.0 % |
+| Mons Mouton | 360/360 | −0.03° | −0.02° | 0.44° | 0.60° | 30.9 % | 31.2 % |
+| Nobile Rim 1 | 360/360 | +0.01° | 0.00° | 2.40° | 2.92° | 21.0 % | 20.9 % |
+| Haworth | 360/360 | 0.00° | 0.00° | 0.16° | 0.24° | 23.1 % | 23.1 % |
 
 These are the values in the frontend's `docs/DATA.md` table; `cross_product.py --check`
 guards them. The first three rows are the sites that predate the Artemis III expansion;
-`b7f02b3` added Mons Mouton, Nobile Rim 1 and Haworth to the baseline and to this table on
-2026-11-13. The table was regenerated the same day after two earlier cells (Shackleton p95
-and de Gerlache 40 m annual sunlight) could not be reproduced with the documented method;
-the values above are the reproducible ones.
+`b7f02b3` added Mons Mouton, Nobile Rim 1 and Haworth to the baseline on 2026-11-13, and the
+2026-11-14 full-coverage run on `LDEM_80S_40M` replaced the earlier partial-coverage numbers
+(205 / 256 / 123 / 136 / 168 azimuths) in both this table and `docs/DATA.md`.
 
-Only azimuths whose 150 km ray stays inside the 40 m product are compared, so `complete` is
-also the sample size. The three Artemis sites sit near that product's 85°S edge and only
-123–168 of their 360 azimuths qualify, against 205–360 for the original sites. Their rows
-are therefore weaker evidence, and none of them validates an Artemis site's windows on its
-own.
-
-Nobile Rim 1 is the one row that is a documented disagreement rather than agreement: its
-2 m p95 is 2.80° with a +1.01° median against a +6.78° median shipped skyline, while its
-20 m median agrees to 0.01° and the annual fractions differ by 0.1 percentage point. The two
-products resolve the steep near-field rim differently at 2 m; the check records that
-disagreement rather than deciding which skyline is correct, so the row is reported as a
-discrepancy.
+The comparison is no longer partial: all six rows have 360 of 360 azimuths, so their p95 and
+annual numbers are measured over the whole sky rather than the sector the 85S window kept.
+Every row except Nobile Rim 1 agrees to p95 ≤ 0.68° and max ≤ 0.73°, and the annual fractions
+to within 1.5 percentage points. Nobile Rim 1 still has the largest 2 m spread: its median
+agrees (+0.01°), but its p95 is 2.40° and its maximum 2.92° — about 5 % of azimuths resolve
+the steep near-field rim differently — while its 20 m median agrees to 0.00° and its annual
+fraction to 0.1 percentage point. An earlier version of this table reported a +1.01° median
+for that site; that was an artifact of the 136-azimuth partial coverage, and the median
+disappears once the whole sky is compared. The tail remains, so the row is a documented
+discrepancy, not agreement, and none of these rows by itself validates an Artemis site's
+windows.
 
 The annual column here is the clamped convention, not the UI's 30.3 / 44.7 / 46.0 %. The
 point of the table is terrain-product agreement, not the app's headline numbers.
@@ -366,13 +373,15 @@ Full year 2026, one-hour ephemeris, 150 km rays, 40 m DEM.
 | Time quantisation | 1 h ephemeris; legacy 10 min masks | UI window boundaries ±1 h; backend intervals ±10 min |
 | Sphere vs ellipsoid | Moon flattening ≈ 1/581 | < 0.01° |
 
-**The DEM edge, in detail.** Shackleton never stops short of 148.5 km in any azimuth, so it is
-unaffected. Malapert sits 121.7 km from the pole inside a DEM whose usable radius is about
-151.7 km, so rays heading away from the pole leave the data after about 30 km: 155 of 360
-azimuths stop before 142.5 km, the shortest at 30.0 km. Malapert's horizon is therefore a
-lower bound in roughly that half of the sky, and its true illumination is lower than reported
-— the one number here limited by data extent rather than by method. Re-running it against the
-80°S–90°S product (`ldem_80s_40m`, 462 MB) would remove this limitation.
+**The DEM edge, in detail.** This paragraph applies to the annual pipeline
+(`run_annual.py`), which still uses the 85S window. Shackleton never stops short of 148.5 km
+in any azimuth, so it is unaffected. Malapert sits 121.7 km from the pole inside a DEM whose
+usable radius is about 151.7 km, so rays heading away from the pole leave the data after
+about 30 km: 155 of 360 azimuths stop before 142.5 km, the shortest at 30.0 km. Malapert's
+horizon is therefore a lower bound in roughly that half of the sky, and its true illumination
+is lower than reported — the one number here limited by data extent rather than by method.
+The six-site cross-product check now uses the wider `LDEM_80S_40M` window (§5.5) and is not
+extent-limited.
 
 **What is not in the budget.** DEM errors are correlated at the scale of the interpolation,
 so the quoted per-azimuth errors understate the uncertainty of a *time series*; a
@@ -413,11 +422,11 @@ as good to tens of minutes, not better.
   80 m; the 40 m pipeline is the independent check.
 - **Six sites, one year.** The shipped product covers Shackleton, Malapert, de Gerlache and
   the three Artemis sites added on 2026-11-13 (Mons Mouton, Nobile Rim 1, Haworth) for 2026.
-  The 40 m check covers all six, but only where the 85S DEM still has data: 360 / 205 / 256
-  complete azimuths for the original sites and 123 / 136 / 168 for the Artemis sites, so most
-  of their northern sky is unchecked. Nobile Rim 1's 2 m row is a documented disagreement,
-  not agreement (§5.5). Libration and illumination repeat over an 18.6-year cycle, so 2026 is
-  representative but not universal.
+  The 40 m cross-product check compares all six over the full sky (360/360 on the 80S
+  product); the annual pipeline still uses the 85S window, so Malapert's annual numbers
+  there remain a lower bound (§6). Nobile Rim 1's 2 m tail is the one documented
+  disagreement, not agreement (§5.5). Libration and illumination repeat over an 18.6-year
+  cycle, so 2026 is representative but not universal.
 - **Southern hemisphere only.** The pipelines are written for the south polar products.
   Northern-hemisphere products use the opposite longitude convention.
 - **Solar cycle and thermal environment** are not considered.
@@ -429,12 +438,12 @@ as good to tens of minutes, not better.
 ```sh
 pip install -r backend/requirements.txt
 
-python backend/pipeline/fetch_dem.py        # 115 MB, resumable
+python backend/pipeline/fetch_dem.py        # 115 MB + 462 MB, resumable
 python backend/pipeline/run_horizon.py      # horizon + projection self-checks
 python backend/pipeline/run_annual.py       # full-year visibility + invariants
 python backend/pipeline/cross_product.py \
-    --source backend/data/dem/ldem_85s_40m.img \
-    --label  backend/data/dem/ldem_85s_40m.lbl --check
+    --source backend/data/dem/ldem_80s_40m.img \
+    --label  backend/data/dem/ldem_80s_40m.lbl --check
 python backend/pipeline/check_convergence.py  # sampling and range sensitivity
 python backend/pipeline/check_frontend_tests.py  # npm test on the shipped assets
 ```
