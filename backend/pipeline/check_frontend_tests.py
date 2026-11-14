@@ -4,7 +4,7 @@
 This replaces the pre-redesign script that replayed ``lib/mission.test.ts``.
 That file and its fake-data assumptions are gone; the current checks are
 ``lib/science.test.ts`` (missing data, dates, blackout, mast, share URLs) and
-``lib/bundled-data.test.ts`` (the real three-site assets), run by ``npm test``.
+``lib/bundled-data.test.ts`` (the real six-site assets), run by ``npm test``.
 
 The backend does not need to duplicate those assertions in Python: the frontend
 already owns the contract, and this wrapper fails if the shipped assets stop

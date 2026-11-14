@@ -1,20 +1,43 @@
 {
-  "schema_version": 1,
-  "recorded_utc": "2026-11-13T08:25:00Z",
+  "schema_version": 2,
+  "recorded_utc": "2026-11-14T02:50:00Z",
   "verified_by": "backend/pipeline/fetch_dem.py",
   "dem": {
-    "product": "LDEM_85S_40M",
-    "description": "LOLA polar DEM, 85S-90S, 40 m/pixel, 7584 x 7584",
-    "source_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_85s_40m.img",
-    "label_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_85s_40m.lbl",
-    "files": {
-      "ldem_85s_40m.img": {
-        "bytes": 115034112,
-        "sha256": "1609e9b860748e0b9952a7239c51b37d3b2a799d35e9fc3c258526711cc1e51d"
+    "products": {
+      "85s": {
+        "product": "LDEM_85S_40M",
+        "description": "LOLA polar DEM, 85S-90S, 40 m/pixel, 7584 x 7584",
+        "recorded_utc": "2026-11-13T08:25:00Z",
+        "source_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_85s_40m.img",
+        "label_url": "https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/polar/img/ldem_85s_40m.lbl",
+        "mirror_url": "https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_85S_40M.IMG",
+        "files": {
+          "ldem_85s_40m.img": {
+            "bytes": 115034112,
+            "sha256": "1609e9b860748e0b9952a7239c51b37d3b2a799d35e9fc3c258526711cc1e51d"
+          },
+          "ldem_85s_40m.lbl": {
+            "bytes": 4986,
+            "sha256": "d8105776af7fb79b1862ffa3946d013ec34f4dc6a00b7f6bff22ef8f768a5d3d"
+          }
+        }
       },
-      "ldem_85s_40m.lbl": {
-        "bytes": 4986,
-        "sha256": "d8105776af7fb79b1862ffa3946d013ec34f4dc6a00b7f6bff22ef8f768a5d3d"
+      "80s": {
+        "product": "LDEM_80S_40M",
+        "description": "LOLA polar DEM, 80S-90S, 40 m/pixel, 15200 x 15200; same grid and datum as the 85S product, wider window for the six-site cross-product check",
+        "recorded_utc": "2026-11-14T02:50:00Z",
+        "source_url": "https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_40M.IMG",
+        "label_url": "https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/LDEM_80S_40M.LBL",
+        "files": {
+          "ldem_80s_40m.img": {
+            "bytes": 462080000,
+            "sha256": "84665a59d6a5006c9ae1d92560470bcabe89a713a98f4c700692f088ae4ee2b1"
+          },
+          "ldem_80s_40m.lbl": {
+            "bytes": 4991,
+            "sha256": "f5fbfe434666423caefd398e8e4dbce0e1e29821e79efb61520c39a93ad11143"
+          }
+        }
       }
     }
   },
@@ -26,6 +49,7 @@
   },
   "cross_product_baseline": {
     "command": "python backend/pipeline/cross_product.py --check",
+    "dem": "LDEM_80S_40M (462 MB, 15200 x 15200)",
     "python": "3.15.0",
     "numpy": "2.5.4"
   }

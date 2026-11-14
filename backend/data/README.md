@@ -7,7 +7,8 @@ is copied into it.
 | Path | Produced by | Size | Committed |
 | --- | --- | --- | --- |
 | `horizons/` | `pipeline/horizons.py` (on first fetch) | ~830 kB | no |
-| `dem/` | `pipeline/fetch_dem.py` (40 m `LDEM_85S_40M`) | ~115 MB | **no** — exceeds repository limits |
+| `dem/ldem_85s_40m.*` | `pipeline/fetch_dem.py --product 85s` | ~115 MB | **no** — exceeds repository limits |
+| `dem/ldem_80s_40m.*` | `pipeline/fetch_dem.py --product 80s` | ~462 MB | **no** — exceeds repository limits |
 
 `public/data/` is not generated here. It is written only by the repository-root `scripts/`;
 the backend reads it for cross-checks and never writes it. The old `export/data/` product was
@@ -16,20 +17,20 @@ removed with the legacy exporter.
 To rebuild the validation caches and run the checks:
 
 ```sh
-python backend/pipeline/fetch_dem.py
+python backend/pipeline/fetch_dem.py            # both windows
 python backend/pipeline/run_horizon.py
 python backend/pipeline/run_annual.py
 python backend/pipeline/cross_product.py \
-    --source backend/data/dem/ldem_85s_40m.img \
-    --label  backend/data/dem/ldem_85s_40m.lbl --check
+    --source backend/data/dem/ldem_80s_40m.img \
+    --label  backend/data/dem/ldem_80s_40m.lbl --check
 ```
 
-Both downloads are safe to re-run; the DEM download resumes from a partial file and Horizons
+All downloads are safe to re-run; the DEM download resumes from a partial file and Horizons
 responses are reused from cache when present.
 
-`backend/PROVENANCE.json` pins the byte count and SHA-256 of both DEM files. `fetch_dem.py`
-verifies them on every run, including cache hits, so a truncated or substituted cache fails
-loudly instead of silently changing the terrain.
+`backend/PROVENANCE.json` pins the byte count and SHA-256 of both DEM windows (four files).
+`fetch_dem.py` verifies them on every run, including cache hits, so a truncated or
+substituted cache fails loudly instead of silently changing the terrain.
 
 Horizons cache names include the observer altitude in kilometres, so 0 m, 2 m and 20 m
 queries cannot reuse each other's responses. Caches written before that change have no
