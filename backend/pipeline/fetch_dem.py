@@ -35,8 +35,26 @@ PDS = ("https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/"
 MIT = "https://imbrium.mit.edu/DATA/LOLA_GDR/POLAR/IMG/"
 
 PRODUCTS = {
-    "85s": dict(name="ldem_85s_40m", bases=(PDS, MIT), expected=7584 * 15168),
-    "80s": dict(name="ldem_80s_40m", bases=(MIT,), expected=15200 * 30400),
+    "85s": dict(
+        name="ldem_85s_40m",
+        expected=7584 * 15168,
+        remotes=(
+            dict(label="PDS", base=PDS,
+                 files={".img": "ldem_85s_40m.img", ".lbl": "ldem_85s_40m.lbl"}),
+            dict(label="MIT", base=MIT,
+                 files={".img": "LDEM_85S_40M.IMG", ".lbl": "LDEM_85S_40M.LBL"}),
+        ),
+    ),
+    "80s": dict(
+        name="ldem_80s_40m",
+        expected=15200 * 30400,
+        remotes=(
+            # The MIT mirror uses upper-case file names; the PDS path does not
+            # carry this product, so there is only one remote here.
+            dict(label="MIT", base=MIT,
+                 files={".img": "LDEM_80S_40M.IMG", ".lbl": "LDEM_80S_40M.LBL"}),
+        ),
+    ),
 }
 
 OUT_DIR = pathlib.Path(__file__).resolve().parents[1] / "data" / "dem"
@@ -89,8 +107,8 @@ def download(key: str, suffix: str) -> pathlib.Path:
 
     resp = None
     errors = []
-    for base in product["bases"]:
-        req = urllib.request.Request(base + name)
+    for remote in product["remotes"]:
+        req = urllib.request.Request(remote["base"] + remote["files"][suffix])
         if partial:
             req.add_header("Range", f"bytes={partial}-")
         try:
@@ -102,10 +120,10 @@ def download(key: str, suffix: str) -> pathlib.Path:
             if exc.code == 416 and partial and verify(name, dest, sources):
                 print(f"[skip] {name} 已完整（{partial:,} 字节）")
                 return dest
-            errors.append(f"{base}: HTTP {exc.code}")
+            errors.append(f"{remote['label']}: HTTP {exc.code}")
         except (urllib.error.URLError, OSError) as exc:
-            errors.append(f"{base}: {exc}")
-            print(f"[retry] {base.split('/')[2]} 不可用，换镜像", flush=True)
+            errors.append(f"{remote['label']}: {exc}")
+            print(f"[retry] {remote['label']} 不可用，换镜像", flush=True)
     if resp is None:
         raise SystemExit(f"{name} 下载失败：\n  " + "\n  ".join(errors))
 
