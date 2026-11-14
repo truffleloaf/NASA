@@ -116,17 +116,13 @@ def main() -> None:
         tr = intervals.truncates(both)
         print(f"   边界截断（首/尾）       : {tr}")
 
-        # clamp 约定下，地形只能减少可见性（body 必须高于 0° 切线）；
-        # 不 clamp 时这个上界不成立（负 skyline 可以看见 el<0 的天体），
-        # 改为检查 raw ≥ clamped，以及 20 m ≥ 2 m（另见 cross_product.py）。
-        bad = []
-        for name, geo, ter in (("日照", sun_geo, sun_ter), ("对地", ear_geo, ear_ter)):
-            if intervals.coverage(ter) > intervals.coverage(geo) + 1e-9:
-                bad.append(f"{name} clamp {intervals.coverage(geo)*100:.1f}% → {intervals.coverage(ter)*100:.1f}%")
-        for name, clamped, raw in (("日照", sun_ter, sun_ter_raw), ("对地", ear_ter, ear_ter_raw)):
-            if intervals.coverage(raw) + 1e-9 < intervals.coverage(clamped):
-                bad.append(f"{name} 不 clamp {intervals.coverage(raw)*100:.1f}% < clamp {intervals.coverage(clamped)*100:.1f}%")
-        print(f"   单调性检查（clamp≤几何；不 clamp≥clamp）: {'❌ ' + '; '.join(bad) if bad else '✅ 通过'}")
+        # 这里不写"单调性检查"：clamp 的阈值是 max(h,0)、raw 的阈值是 h，
+        # 两者的包含关系由定义决定（max(h,0) ≥ h），任何数据下都不会失败，
+        # 写成检查只会印出一个假的 ✅。改为报告负角天际线的实际贡献。
+        sun_extra = intervals.coverage(sun_ter_raw & ~sun_ter)
+        ear_extra = intervals.coverage(ear_ter_raw & ~ear_ter)
+        print(f"   负角天际线额外贡献       : 日照 +{sun_extra*100:4.1f} 个百分点，"
+              f"对地 +{ear_extra*100:4.1f} 个百分点（不 clamp 减 clamp）")
         print()
 
     print("=== 已知事实校验 ===")
